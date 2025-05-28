@@ -1,13 +1,34 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import Header from './components/Header.vue'
+
+const route = useRoute()
+const showHeader = computed(() => route.meta.showHeader !== false)
 </script>
 
 <template>
-  <div>
-    <router-view></router-view>
+  <div class="app-container">
+    <Header v-if="showHeader" />
+    <div class="main-layout">
+      <router-view />
+    </div>
   </div>
 </template>
 
-<style scoped>
+<style>
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-layout {
+  flex: 1;
+  display: flex;
+  /* margin-top: 4rem; */
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

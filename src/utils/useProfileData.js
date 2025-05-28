@@ -1,5 +1,5 @@
 // src/composables/useProfileData.js
-import { ref, onMounted, computed, defineExpose } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuth } from './useAuth.js'
 
 export function useProfileData() {
@@ -10,7 +10,6 @@ export function useProfileData() {
   const favorites = ref([]);
   const likes = ref([]);
   const activeTab = ref('notes');
-  const initialized = ref(false);
 
   const getNotesByTab = computed(() => {
     switch (activeTab.value) {
@@ -26,25 +25,20 @@ export function useProfileData() {
   });
 
   const initData = async () => {
-    if (initialized.value) return;
-    initialized.value = true;
-
-    userInfo.value = auth.getUserInfo();
-    notes.value = await fetchNotes();
-    favorites.value = await fetchFavorites();
-    likes.value = await fetchLikes();
-  };
-
-  onMounted(() => {
-    if (window.location.hash === '#profile') {
-      initData();
-    }
-    window.addEventListener('hashchange', () => {
-      if (window.location.hash === '#profile') {
-        initData();
+    console.log('初始化个人信息数据');
+    try {
+      userInfo.value = auth.getUserInfo();
+      console.log('获取到的用户信息:', userInfo.value);
+      
+      if (userInfo.value) {
+        notes.value = await fetchNotes();
+        favorites.value = await fetchFavorites();
+        likes.value = await fetchLikes();
       }
-    });
-  });
+    } catch (error) {
+      console.error('初始化数据失败:', error);
+    }
+  };
 
   const fetchNotes = async () => {
     return [

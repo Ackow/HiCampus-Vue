@@ -1,8 +1,9 @@
 .sidebar {
-    position: fixed;
+    position: sticky;
     width: 250px;
-    margin-top: 80px;
-    height: calc(100vh - 80px); /* 减去页首高度 */
+    top: 80px;
+    left: 0;
+    height: calc(100vh - 80px);
     background-color: #ffffff;
     z-index: 1000;
     padding: 20px;
@@ -34,4 +35,11 @@
 
 .sidebar-menu a.select {
     background-color: #f5f5f5;
+}
+
+/* 当屏幕宽度小于最小宽度时，调整左侧位置 */
+@media screen and (max-width: 800px) {
+    .sidebar {
+        left: 0;
+    }
 }

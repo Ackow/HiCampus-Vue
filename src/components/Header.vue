@@ -74,7 +74,7 @@
 
 <script setup>
 import { useSearch } from '../utils/useSearch.js'
-import { ref, onMounted, defineEmits } from 'vue';
+import { ref, onMounted, defineEmits, onUnmounted } from 'vue';
 import { useAuth } from '../utils/useAuth.js';
 import { useRouter } from 'vue-router';
 
@@ -93,24 +93,32 @@ const router = useRouter();
 const isLoggedIn = ref(auth.checkLoginStatus());
 const userInfo = ref(auth.getUserInfo());
 
+const handleUserInfoUpdate = (event) => {
+  userInfo.value = event.detail
+}
+
 onMounted(() => {
   auth.setUpdateUICallback((status) => {
     isLoggedIn.value = status;
     userInfo.value = auth.getUserInfo();
   });
+  window.addEventListener('userInfoUpdated', handleUserInfoUpdate)
+});
+
+onUnmounted(() => {
+  window.removeEventListener('userInfoUpdated', handleUserInfoUpdate)
 });
 
 const logout = () => {
   auth.logout();
-  router.push('/');
 };
 
 const emit = defineEmits(['init-profile'])
 
 const handleProfileClick = () => {
   console.log('Header:个人信息按钮被点击');
-  window.location.hash = '#profile';
-  emit('init-profile')
+  router.push({ name: 'Profile' });
+  emit('init-profile');
 }
 </script>
 

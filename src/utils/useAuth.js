@@ -163,11 +163,19 @@ export function useAuth() {
 
   // 退出登录
   const logout = () => {
+    // 清除所有本地存储
     localStorage.removeItem('isLoggedIn')
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
+    
+    // 更新UI状态
     updateUI(false)
-    router.push('/login')
+    
+    // 触发自定义事件通知其他组件
+    window.dispatchEvent(new CustomEvent('userInfoUpdated', { detail: null }))
+    
+    // 导航到首页
+    router.push('/')
   }
 
   return {
