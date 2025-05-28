@@ -1,23 +1,17 @@
 <template>
-  <div class="sidebar" :class="{ active: isActive }">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-menu">
-      <router-link to="/" class="menu-item" :class="{ active: currentRoute === '/' }">首页</router-link>
-      <router-link to="/publish" class="menu-item" :class="{ active: currentRoute === '/publish' }">发布</router-link>
-      <router-link to="/message" class="menu-item" :class="{ active: currentRoute === '/message' }">消息</router-link>
+      <a href="/" class="select">首页</a>
+      <a href="">发布</a>
+      <a href="#message">消息</a>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
-
-const route = useRoute()
-const isActive = ref(true)
-
-const currentRoute = computed(() => route.path)
+// 组件逻辑可以在这里添加
 </script>
 
-<style>
-@import '../styles/sidebar.css';
-</style> 
+<style scoped>
+@import '../styles/siderbar.css'
+</style>

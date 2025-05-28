@@ -2,11 +2,12 @@
   <header class="site-header">
     <div class="container header-content">
       <div class="logo-container">
-        <router-link to="/">
+        <a href="index.html">
           <img src="/assets/images/logo.png" alt="HiCampus Logo" class="logo-img">
-        </router-link>
+        </a>
         <span class="logo-text">HiCampus</span>
       </div>
+
       <div class="header-right-actions">
         <!-- 搜索按钮 -->
         <button
@@ -20,37 +21,38 @@
           <img src="/assets/images/搜索.svg" alt="搜索图标" class="search-trigger-icon">
         </button>
         <!-- 未登录状态 -->
-        <div class="auth-buttons" id="authButtons">
-          <button class="auth-button" @click="goToLogin">登录/注册</button>
+        <div class="auth-buttons" id="authButtons" :style="{ display: isLoggedIn ? 'none' : 'block' }">
+          <router-link to="/register-login" class="auth-button">登录/注册</router-link>
         </div>
         <!-- 已登录状态 -->
-        <div class="user-profile-container" id="userProfile" style="display: none;">
+        <div class="user-profile-container" id="userProfile" :style="{ display: isLoggedIn ? 'flex' : 'none' }">
           <div class="user-profile-wrapper">
-            <div class="user-profile-link">
-              <img alt="用户头像" class="user-avatar">
-              <span class="user-nickname">加载中...</span>
-            </div>
+            <a class="user-profile-link">
+              <img :alt="userInfo?.nickname || '用户头像'" :src="userInfo?.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" class="user-avatar">
+              <span class="user-nickname">{{ userInfo?.nickname || userInfo?.username || '加载中...' }}</span>
+            </a>
             <div class="user-dropdown-menu">
-              <router-link to="/profile" class="dropdown-item">
+              <a href="#profile" class="dropdown-item" @click="handleProfileClick">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
                 <span>个人信息</span>
-              </router-link>
-              <button class="dropdown-item" @click="handleLogout">
+              </a>
+              <button class="dropdown-item" @click="logout">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
-                <span>退出登录</span>
+                退出登录
               </button>
             </div>
           </div>
         </div>
       </div>
     </div>
+
     <!-- 搜索区域 -->
     <div class="search-area" ref="searchArea" :class="{ active: searchActive }">
       <div
@@ -71,10 +73,10 @@
 </template>
 
 <script setup>
-import { useSearch } from '../composables/useSearch'
-import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/useAuth'
-import { onMounted } from 'vue'
+import { useSearch } from '../utils/useSearch.js'
+import { ref, onMounted, defineEmits } from 'vue';
+import { useAuth } from '../utils/useAuth.js';
+import { useRouter } from 'vue-router';
 
 const {
   searchActive,
@@ -86,24 +88,32 @@ const {
   closeSearch
 } = useSearch()
 
-const router = useRouter()
-const { checkLoginStatus, logout } = useAuth()
+const auth = useAuth();
+const router = useRouter();
+const isLoggedIn = ref(auth.checkLoginStatus());
+const userInfo = ref(auth.getUserInfo());
 
-// 检查登录状态
 onMounted(() => {
-  checkLoginStatus()
-})
+  auth.setUpdateUICallback((status) => {
+    isLoggedIn.value = status;
+    userInfo.value = auth.getUserInfo();
+  });
+});
 
-// 处理退出登录
-const handleLogout = () => {
-  logout()
-}
+const logout = () => {
+  auth.logout();
+  router.push('/');
+};
 
-const goToLogin = () => {
-  router.push('/login')
+const emit = defineEmits(['init-profile'])
+
+const handleProfileClick = () => {
+  console.log('Header:个人信息按钮被点击');
+  window.location.hash = '#profile';
+  emit('init-profile')
 }
 </script>
 
-<style>
+<style scoped>
 @import '../styles/header.css';
-</style> 
+</style>

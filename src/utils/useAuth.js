@@ -22,39 +22,19 @@ export function useAuth() {
     confirmPassword: ''
   })
 
+  let updateUICallback = null;
+
+  // 设置回调函数
+  const setUpdateUICallback = (callback) => {
+    updateUICallback = callback;
+  };
+
   // 更新UI显示
   const updateUI = (isLoggedIn) => {
-    const authButtons = document.getElementById('authButtons')
-    const userProfile = document.getElementById('userProfile')
-    
-    if (authButtons && userProfile) {
-      if (isLoggedIn) {
-        authButtons.style.display = 'none'
-        userProfile.style.display = 'flex'
-        
-        // 获取用户信息并更新显示
-        const userInfo = JSON.parse(localStorage.getItem('userInfo'))
-        if (userInfo) {
-          const userAvatar = userProfile.querySelector('.user-avatar')
-          const userNickname = userProfile.querySelector('.user-nickname')
-          
-          // 更新头像
-          if (userAvatar) {
-            userAvatar.src = userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
-            userAvatar.alt = `${userInfo.nickname || '用户'}的头像`
-          }
-          
-          // 更新昵称
-          if (userNickname) {
-            userNickname.textContent = userInfo.nickname || userInfo.username || '加载中...'
-          }
-        }
-      } else {
-        authButtons.style.display = 'flex'
-        userProfile.style.display = 'none'
-      }
+    if (updateUICallback) {
+      updateUICallback(isLoggedIn);
     }
-  }
+  };
 
   const toggleForm = () => {
     isRegister.value = !isRegister.value
@@ -204,6 +184,7 @@ export function useAuth() {
     checkLoginStatus,
     getUserInfo,
     logout,
+    setUpdateUICallback,
     updateUI
   }
-} 
+}

@@ -1,295 +1,323 @@
-.register-and-login-page {
-  margin: 0;
-  padding: 0;
-  font-family: 'Noto Sans SC', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f0f2f5;
-  width: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
+/* 这里直接将 CSS 内容复制过来 */
+html {
+    font-size: 16px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans SC', sans-serif; /* 默认中文字体 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5; /* 背景颜色 */
+    width: 100%; /* 确保宽度占满 */
 }
 
 .container {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  height: 100vh;
-  min-height: 37.5rem;
-  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.1);
-  border-radius: 0;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  background-color: #fff;
+    display: flex;
+    width: 100%;
+    max-width: 100%; /* 修改为100%以占满浏览器宽度 */
+    height: 100vh; /* 使容器占满视口高度 */
+    min-height: 37.5rem; /* 最小高度，防止内容过少时塌陷 */
+    box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.1); /* 简单阴影 */
+    border-radius: 0; /* 去除圆角 */
+    overflow: hidden; /* 防止内容溢出圆角 */
+    margin: 0;
+    padding: 0;
 }
 
+/* 左侧面板 */
 .left-panel {
-  flex: 1;
-  background-color: #FFFBEB;
-  display: flex;
-  flex-direction: column;
-  padding: 3.75rem 5rem;
-  box-sizing: border-box;
-  justify-content: flex-start;
-  align-items: flex-start;
+    flex: 1; /* 占据一半宽度 */
+    background-color: #FFFBEB; /* 浅黄色背景 */
+    display: flex;
+    flex-direction: column;
+    padding: 3.75rem 5rem; /* 内边距 */
+    box-sizing: border-box; /* 包含padding在内的宽度计算 */
+    justify-content: flex-start; /* 内容顶部对齐 */
+    align-items: flex-start; /* 内容左侧对齐 */
 }
 
 .logo {
-  font-family: 'Roboto', sans-serif;
-  font-weight: 700;
-  font-size: 2.25rem;
-  color: #4A90E2;
-  margin-bottom: 7.5rem;
+    font-family: 'Roboto', sans-serif; /* 英文Logo字体 */
+    font-weight: 700;
+    font-size: 2.25rem;
+    color: #4A90E2; /* 蓝色 */
+    margin-bottom: 7.5rem; /* 与下方slogan的间距 */
 }
 
 .slogan-section {
-  margin-top: 7.5rem;
+    margin-top: 7.5rem; /* 将slogan推到底部 */
 }
 
 .slogan-hi,
 .slogan-text {
-  text-align: left;
-  font-size: 3rem;
-  font-weight: 700;
-  color: #4A90E2;
-  margin: 0;
-  line-height: 1.2;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #4A90E2; /* 蓝色 */
+    margin: 0;
+    line-height: 1.2;
 }
 
+/* 右侧面板 */
 .right-panel {
-  flex: 1;
-  background-color: #FFFFFF;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 3.75rem 0;
-  box-sizing: border-box;
-  position: relative;
+    flex: 1;
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* 垂直居中 */
+    align-items: center;
+    padding: 3.75rem 0;
+    box-sizing: border-box;
+    position: relative;
 }
 
 .action-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  position: static;
-  top: auto;
-  left: auto;
-  right: auto;
-  transform: none;
-  flex: 1;
-  justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: static; /* 取消绝对定位 */
+    top: auto;
+    left: auto;
+    right: auto;
+    transform: none;
+    flex: 1;
+    justify-content: center;
 }
 
 .start-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #333333;
-  margin-bottom: 1.875rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333333;
+    margin-bottom: 1.875rem;
 }
 
-.input-group {
-  width: 22.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin-bottom: 2rem;
+.buttons-group {
+    display: flex;
+    gap: 20px; /* 按钮之间的间距 */
+    margin-bottom: 25px;
 }
 
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: #f5f5f5;
-  border-radius: 1.5rem;
-  padding: 0 1.25rem;
-  height: 4rem;
-  box-sizing: border-box;
-  box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.04);
-  transition: box-shadow 0.2s, border 0.2s;
-  border: 0.09375rem solid transparent;
+.btn {
+    padding: 15px 40px;
+    border-radius: 30px; /* 圆角按钮 */
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.input-wrapper:focus-within {
-  box-shadow: 0 0.25rem 1rem rgba(123,180,244,0.15);
-  border: 0.09375rem solid #7BB4F4;
-  background: #fff;
+.primary-btn {
+    background-color: #7BB4F4; /* 浅蓝色 */
+    color: #FFFFFF;
 }
 
-.input-icon {
-  margin-right: 0.75rem;
-  display: flex;
-  align-items: center;
+.primary-btn:hover {
+    background-color: #639ceb;
+    transform: translateY(-2px);
 }
 
-.password-toggle {
-  position: absolute;
-  right: 1.25rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  opacity: 0.6;
+.secondary-btn {
+    background-color: #E6F2FE; /* 更浅的蓝色 */
+    color: #4A90E2; /* 蓝色字体 */
 }
 
-.password-toggle:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  opacity: 1;
-  transform: scale(1.1);
-}
-
-.password-toggle svg {
-  transition: transform 0.3s ease;
-}
-
-.password-toggle:hover svg {
-  transform: scale(1.1);
-}
-
-.password-toggle.active {
-  opacity: 1;
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.password-toggle.active svg {
-  transform: rotate(180deg);
-}
-
-.input-wrapper input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 1.25rem;
-  flex: 1;
-  color: #222;
-  padding: 1rem 0;
-  transition: color 0.2s;
-  padding-right: 3rem;
-}
-
-.input-wrapper input::placeholder {
-  color: #999;
-  font-size: 1.125rem;
-  letter-spacing: 0.0625rem;
-}
-
-.login-btn,
-.register-btn {
-  width: 22.5rem;
-  height: 4rem;
-  font-size: 1.5rem;
-  border-radius: 2rem;
-  margin-bottom: 1.5rem;
-  background: #7BB4F4;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 700;
-  transition: background 0.2s;
-}
-
-.login-btn:hover,
-.register-btn:hover {
-  background: #639ceb;
-}
-
-.registerAndLogin-link {
-  color: #222;
-  font-size: 1.125rem;
-  text-align: center;
-  cursor: pointer;
-  margin: 0;
-}
-
-.registerAndLogin-link:hover {
-  color: #c3c3c3;
+.secondary-btn:hover {
+    background-color: #d0e7fb;
+    transform: translateY(-2px);
 }
 
 .footer-info {
-  text-align: center;
-  font-size: 0.875rem;
-  color: #AAAAAA;
-  margin-top: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #AAAAAA;
+    margin-top: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .footer-logo {
-  font-family: 'Roboto', sans-serif;
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: #4A90E2;
-  margin-bottom: 0.3125rem;
+    font-family: 'Roboto', sans-serif; /* 英文Logo字体 */
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #4A90E2; /* 蓝色 */
+    margin-bottom: 0.3125rem;
 }
 
 .terms-privacy {
-  margin: 0;
+    margin: 0;
 }
 
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .container {
+    .container {
+        flex-direction: column; /* 小屏幕下堆叠显示 */
+        height: auto;
+        min-height: 100vh; /* 确保移动端至少占满一屏 */
+        border-radius: 0; /* 移动端可以取消圆角 */
+        box-shadow: none; /* 移动端可以取消阴影 */
+    }
+
+    .left-panel {
+        padding: 2.5rem 1.875rem;
+        height: 30vh; /* 左侧面板在小屏幕下占据固定高度 */
+        min-height: 12.5rem;
+        align-items: center; /* 居中对齐 */
+        text-align: center;
+        justify-content: center;
+        margin-bottom: 1.25rem; /* 增加与右侧的间距 */
+    }
+
+    .logo {
+        font-size: 1.875rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .slogan-hi, .slogan-text {
+        font-size: 2rem;
+    }
+
+    .right-panel {
+        padding: 2.5rem 1.875rem;
+        justify-content: flex-start; /* 移动端右侧内容从顶部开始排列 */
+        flex-grow: 1; /* 占据剩余空间 */
+    }
+
+    .action-section {
+        padding-top: 0; /* 移动端顶部间距可以减少 */
+    }
+
+    .start-text {
+        font-size: 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .buttons-group {
+        flex-direction: column; /* 按钮垂直堆叠 */
+        gap: 0.9375rem;
+        width: 100%; /* 按钮宽度占满父容器 */
+        max-width: 15.625rem; /* 限制按钮最大宽度 */
+    }
+
+    .btn {
+        width: 100%;
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+    }
+
+    .footer-info {
+        margin-top: 2.5rem; /* 移动端底部信息距离上部内容更远 */
+    }
+}
+
+.input-group {
+    width: 22.5rem;
+    display: flex;
     flex-direction: column;
-    height: auto;
-    min-height: 100vh;
-    border-radius: 0;
-    box-shadow: none;
-  }
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
 
-  .left-panel {
-    padding: 2.5rem 1.875rem;
-    height: 30vh;
-    min-height: 12.5rem;
+.input-wrapper {
+    position: relative;
+    display: flex;
     align-items: center;
-    text-align: center;
-    justify-content: center;
-    margin-bottom: 1.25rem;
-  }
+    background: #f5f5f5;
+    border-radius: 1.5rem;
+    padding: 0 1.25rem;
+    height: 4rem;
+    box-sizing: border-box;
+    box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s, border 0.2s;
+    border: 0.09375rem solid transparent;
+}
 
-  .logo {
-    font-size: 1.875rem;
-    margin-bottom: 1.25rem;
-  }
+.input-wrapper:focus-within {
+    box-shadow: 0 0.25rem 1rem rgba(123,180,244,0.15);
+    border: 0.09375rem solid #7BB4F4;
+    background: #fff;
+}
 
-  .slogan-hi, .slogan-text {
-    font-size: 2rem;
-  }
+.input-icon {
+    margin-right: 0.75rem;
+    display: flex;
+    align-items: center;
+}
 
-  .right-panel {
-    padding: 2.5rem 1.875rem;
-    justify-content: flex-start;
-    flex-grow: 1;
-  }
+.password-toggle {
+    position: absolute;
+    right: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
 
-  .action-section {
-    padding-top: 0;
-  }
+.password-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
 
-  .start-text {
+.input-wrapper input {
+    border: none;
+    background: transparent;
+    outline: none;
     font-size: 1.25rem;
-    margin-bottom: 1.25rem;
-  }
+    flex: 1;
+    color: #222;
+    padding: 1rem 0;
+    transition: color 0.2s;
+    padding-right: 3rem; /* 为密码显示按钮留出空间 */
+}
 
-  .input-group {
-    width: 100%;
-    max-width: 22.5rem;
-  }
+.input-wrapper input::placeholder {
+    color: #999;
+    font-size: 1.125rem;
+    letter-spacing: 0.0625rem;
+}
 
-  .login-btn,
-  .register-btn {
-    width: 100%;
-    max-width: 22.5rem;
-  }
+.login-btn {
+    width: 22.5rem;
+    height: 4rem;
+    font-size: 1.5rem;
+    border-radius: 2rem;
+    margin-bottom: 1.5rem;
+    background: #7BB4F4;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s;
+}
 
-  .footer-info {
-    margin-top: 2.5rem;
-  }
-} 
+.registerAndLogin-link {
+    color: #222;
+    font-size: 1.125rem;
+    text-align: center;
+    cursor: pointer;
+    margin: 0;
+}
+
+.registerAndLogin-link:hover {
+    color: #c3c3c3;
+}
+
+.register-btn {
+    width: 22.5rem;
+    height: 4rem;
+    font-size: 1.5rem;
+    border-radius: 2rem;
+    margin-bottom: 1.5rem;
+    background: #7BB4F4;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s;
+}
