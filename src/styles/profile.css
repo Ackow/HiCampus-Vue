@@ -1,0 +1,252 @@
+.profile-container {
+  max-width: 1200px;
+  margin: 40px auto 0 auto;
+  padding: 20px;
+}
+
+.profile-header {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 32px;
+  text-align: left;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
+.profile-left {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin: 0 25px;
+}
+
+.avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-avatar {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.profile-right {
+  flex: 1;
+  min-width: 0;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin: 0 25px;
+}
+
+.profile-nickname-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-nickname-container a {
+  opacity: .7;
+  transition: opacity 0.3s ease;
+}
+
+.profile-nickname-container a:hover {
+  opacity: 1;
+}
+
+.edit-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.profile-nickname {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-meta {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.profile-tags {
+  display: inline-block;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 16px;
+  padding: 6px 5px;
+  font-size: 0.8rem;
+  margin: 10px 0;
+  text-align: center;
+  width: 45px;
+}
+
+.profile-gender {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.profile-tabs {
+  display: flex;
+  justify-content: center;
+  margin-left: -270px;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+
+.profile-tab {
+  font-size: 1.1rem;
+  color: #888;
+  cursor: pointer;
+  padding-bottom: 6px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.profile-tab:hover {
+  color: #666;
+}
+
+.profile-tab.active {
+  color: #222;
+  border-bottom: 2.5px solid #222;
+  font-weight: bold;
+}
+
+.note-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 32px;
+}
+
+.note-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  width: 260px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.note-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 18px 18px 0 0;
+}
+
+.note-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 14px 16px 6px 16px;
+  color: #333;
+}
+
+.note-meta {
+  display: flex;
+  align-items: center;
+  margin: 0 16px;
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.note-meta img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.note-like {
+  float: right;
+  color: #e25555;
+  font-size: 1rem;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.note-like i {
+  margin-right: 3px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .profile-left {
+    margin: 0;
+  }
+
+  .profile-right {
+    margin: 0;
+    align-items: center;
+  }
+
+  .profile-tabs {
+    margin-left: 0;
+    gap: 20px;
+  }
+
+  .note-list {
+    justify-content: center;
+  }
+
+  .note-card {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 10px;
+  }
+
+  .profile-avatar {
+    width: 150px;
+    height: 150px;
+  }
+
+  .profile-nickname {
+    font-size: 1.5rem;
+  }
+
+  .profile-tabs {
+    gap: 15px;
+  }
+
+  .profile-tab {
+    font-size: 1rem;
+  }
+} 
