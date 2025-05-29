@@ -94,7 +94,7 @@ const isLoggedIn = ref(auth.checkLoginStatus());
 const userInfo = ref(auth.getUserInfo());
 
 const handleUserInfoUpdate = (event) => {
-  console.log('Header: 收到用户信息更新事件', event.detail)
+  // console.log('Header: 收到用户信息更新事件', event.detail)
   if (event.detail) {
     // 立即更新用户信息
     userInfo.value = event.detail

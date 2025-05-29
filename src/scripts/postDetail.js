@@ -1,75 +1,147 @@
-class ImageSlider {
-    constructor(container) {
-        this.container = container;
-        this.slider = container.querySelector('.image-slider');
-        this.images = Array.from(this.slider.querySelectorAll('.detail-image'));
-        this.indicators = container.querySelector('.image-indicators');
-        this.prevBtn = container.querySelector('.prev-btn');
-        this.nextBtn = container.querySelector('.next-btn');
-        this.currentIndex = 0;
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import axios from 'axios'
 
-        this.init();
+// 配置 axios 默认值
+axios.defaults.baseURL = 'http://localhost:3000'
+
+export function usePostDetail(props, emit) {
+  // 响应式状态
+  const currentImageIndex = ref(0)
+  const commentContent = ref('')
+  const comments = ref([])
+  const isLoading = ref(false)
+
+  // 方法定义
+  const loadComments = async () => {
+    if (!props.postDetail?.id) {
+      console.error('文章ID不存在:', props.postDetail)
+      return
     }
-
-    init() {
-        // 创建指示器
-        this.images.forEach((_, index) => {
-            const indicator = document.createElement('div');
-            indicator.className = 'indicator';
-            if (index === 0) indicator.classList.add('active');
-            indicator.addEventListener('click', () => this.goToSlide(index));
-            this.indicators.appendChild(indicator);
-        });
-
-        // 添加按钮事件监听
-        this.prevBtn.addEventListener('click', () => this.prevSlide());
-        this.nextBtn.addEventListener('click', () => this.nextSlide());
-
-        // 初始化显示
-        this.updateSlide();
+    try {
+      console.log('开始加载评论，文章ID:', props.postDetail.id)
+      const response = await axios.get(`/api/articles/${props.postDetail.id}/comments`)
+      console.log('评论加载响应:', response.data)
+      comments.value = response.data
+      console.log('评论列表已更新:', comments.value)
+    } catch (error) {
+      console.error('加载评论失败:', error)
+      if (error.response) {
+        console.error('错误响应:', error.response.data)
+      }
     }
+  }
 
-    updateSlide() {
-        // 更新图片显示
-        this.images.forEach((img, index) => {
-            img.classList.toggle('active', index === this.currentIndex);
-        });
+  const closeDetail = () => {
+    emit('close')
+  }
 
-        // 更新指示器
-        const indicators = this.indicators.querySelectorAll('.indicator');
-        indicators.forEach((indicator, index) => {
-            indicator.classList.toggle('active', index === this.currentIndex);
-        });
+  const handleAvatarError = (e) => {
+    e.target.src = 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+  }
 
-        // 更新按钮状态
-        this.prevBtn.style.display = this.currentIndex === 0 ? 'none' : 'flex';
-        this.nextBtn.style.display = this.currentIndex === this.images.length - 1 ? 'none' : 'flex';
+  const prevSlide = () => {
+    if (currentImageIndex.value > 0) {
+      currentImageIndex.value--
     }
+  }
 
-    goToSlide(index) {
-        this.currentIndex = index;
-        this.updateSlide();
+  const nextSlide = () => {
+    if (currentImageIndex.value < props.postDetail.images.length - 1) {
+      currentImageIndex.value++
     }
+  }
 
-    prevSlide() {
-        if (this.currentIndex > 0) {
-            this.currentIndex--;
-            this.updateSlide();
+  const goToSlide = (index) => {
+    currentImageIndex.value = index
+  }
+
+  const toggleLike = () => {
+    emit('toggle-like')
+  }
+
+  const submitComment = async () => {
+    if (!commentContent.value.trim() || isLoading.value) return
+    if (!props.postDetail?.id) {
+      console.error('文章ID不存在:', props.postDetail)
+      alert('文章数据不完整，请刷新页面重试')
+      return
+    }
+    
+    isLoading.value = true
+    try {
+      console.log('发送评论，文章ID:', props.postDetail.id)
+      const response = await axios.post(`/api/articles/${props.postDetail.id}/comments`, {
+        content: commentContent.value
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
+      })
+      
+      // 添加新评论到列表
+      comments.value.unshift(response.data)
+      // 更新评论数
+      props.postDetail.commentCount = (props.postDetail.commentCount || 0) + 1
+      // 清空输入框
+      commentContent.value = ''
+      // 通知父组件评论已添加
+      emit('comment-added', response.data)
+    } catch (error) {
+      console.error('发送评论失败:', error)
+      if (error.response?.status === 401) {
+        // 未登录或 token 过期
+        alert('请先登录后再评论')
+      } else {
+        alert('评论发送失败，请稍后重试')
+      }
+    } finally {
+      isLoading.value = false
     }
+  }
 
-    nextSlide() {
-        if (this.currentIndex < this.images.length - 1) {
-            this.currentIndex++;
-            this.updateSlide();
-        }
+  // 监听 show 属性变化
+  watch(() => props.show, (newVal) => {
+    if (newVal) {
+      document.body.style.overflow = 'hidden'
+      // 重置评论列表和图片索引
+      comments.value = []
+      currentImageIndex.value = 0
+      // 重新加载评论
+      loadComments()
+    } else {
+      document.body.style.overflow = ''
     }
-}
+  }, { immediate: true })
 
-// 初始化图片轮播
-document.addEventListener('DOMContentLoaded', () => {
-    const imageContainer = document.querySelector('.detail-image-container');
-    if (imageContainer) {
-        new ImageSlider(imageContainer);
+  // 监听 postDetail 变化
+  watch(() => props.postDetail, (newVal) => {
+    console.log('postDetail changed:', newVal)
+    // 当 postDetail 变化时，如果当前是显示状态，重新加载评论
+    if (props.show) {
+      loadComments()
     }
-}); 
+  }, { immediate: true })
+
+  // 组件挂载和卸载
+  onMounted(() => {
+    console.log('PostDetail mounted, postDetail:', props.postDetail)
+  })
+
+  onBeforeUnmount(() => {
+    document.body.style.overflow = ''
+  })
+
+  return {
+    currentImageIndex,
+    commentContent,
+    comments,
+    isLoading,
+    closeDetail,
+    handleAvatarError,
+    prevSlide,
+    nextSlide,
+    goToSlide,
+    toggleLike,
+    submitComment
+  }
+} 

@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 const uploadController = require('../controllers/uploadController');
 const articleController = require('../controllers/articleController');
 const authenticateToken = require('../middleware/auth');
-const upload = require('../config/upload');
+const upload = require('../middleware/upload');
 
 // 注册路由
 router.post('/register', userController.register);

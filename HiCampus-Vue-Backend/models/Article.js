@@ -24,6 +24,14 @@ const articleSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    collectCount: {
+        type: Number,
+        default: 0
+    },
+    collectedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     mentionedUsers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -42,6 +50,7 @@ articleSchema.index({ creator: 1, createdAt: -1 });
 articleSchema.index({ title: 'text', content: 'text' }); // 用于全文搜索
 articleSchema.index({ topics: 1 }); // 为话题添加索引
 articleSchema.index({ mentionedUsers: 1 }); // 为被艾特用户添加索引
+articleSchema.index({ collectedBy: 1 }); // 为收藏用户添加索引
 
 const Article = mongoose.model('Article', articleSchema);
 

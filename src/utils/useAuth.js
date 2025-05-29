@@ -1,5 +1,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 // API配置
 const API_URL = 'http://localhost:3000/api'
@@ -24,6 +25,9 @@ export function useAuth() {
   })
 
   let updateUICallback = null;
+
+  const token = ref(localStorage.getItem('token'))
+  const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
 
   // 设置回调函数
   const setUpdateUICallback = (callback) => {
@@ -87,13 +91,13 @@ export function useAuth() {
 
       if (response.ok) {
         // 保存token和用户信息
-        localStorage.setItem('token', result.token)
+        setToken(result.token)
         // 确保头像URL是完整的
         const userData = {
           ...result.user,
           avatar: result.user.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
         };
-        localStorage.setItem('userInfo', JSON.stringify(userData))
+        setUserInfo(userData)
         localStorage.setItem('isLoggedIn', 'true')
         
         // 更新UI显示
@@ -184,22 +188,39 @@ export function useAuth() {
     return isLoggedIn
   }
 
+  // 获取 token
+  const getToken = () => {
+    return localStorage.getItem('token')
+  }
+
+  // 设置 token
+  const setToken = (newToken) => {
+    token.value = newToken
+    localStorage.setItem('token', newToken)
+  }
+
   // 获取用户信息
   const getUserInfo = () => {
-    const userInfo = localStorage.getItem('userInfo')
-    if (!userInfo) return null
-    
-    try {
-      const parsedInfo = JSON.parse(userInfo)
-      // 确保头像URL是完整的
-      if (parsedInfo.avatar && !parsedInfo.avatar.startsWith('http')) {
-        parsedInfo.avatar = `http://localhost:3000/uploads/avatars/${parsedInfo.avatar}`
-      }
-      return parsedInfo
-    } catch (error) {
-      console.error('解析用户信息失败:', error)
-      return null
-    }
+    return JSON.parse(localStorage.getItem('userInfo') || 'null')
+  }
+
+  // 设置用户信息
+  const setUserInfo = (info) => {
+    userInfo.value = info
+    localStorage.setItem('userInfo', JSON.stringify(info))
+  }
+
+  // 清除认证信息
+  const clearAuth = () => {
+    token.value = null
+    userInfo.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+  }
+
+  // 检查是否已登录
+  const isAuthenticated = () => {
+    return !!getToken()
   }
 
   // 退出登录
@@ -242,6 +263,13 @@ export function useAuth() {
     getUserInfo,
     logout,
     setUpdateUICallback,
-    updateUI
+    updateUI,
+    token,
+    userInfo,
+    getToken,
+    setToken,
+    setUserInfo,
+    clearAuth,
+    isAuthenticated
   }
 }

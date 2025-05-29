@@ -24,18 +24,27 @@
       </div>
     </div>
     <div class="profile-tabs">
-      <div class="profile-tab" :class="{ active: activeTab === 'notes' }" @click="activeTab = 'notes'">笔记</div>
-      <div class="profile-tab" :class="{ active: activeTab === 'favorites' }" @click="activeTab = 'favorites'">收藏</div>
-      <div class="profile-tab" :class="{ active: activeTab === 'likes' }" @click="activeTab = 'likes'">点赞</div>
+      <div class="profile-tab" :class="{ active: activeTab === 'notes' }" @click="handleTabChange('notes')">笔记</div>
+      <div class="profile-tab" :class="{ active: activeTab === 'favorites' }" @click="handleTabChange('favorites')">收藏</div>
+      <div class="profile-tab" :class="{ active: activeTab === 'likes' }" @click="handleTabChange('likes')">点赞</div>
     </div>
-    <div class="note-list">
-      <div v-for="note in getNotesByTab" :key="note.id" class="note-card">
-        <img class="note-img" :src="note.image" :alt="note.title">
+    <div v-if="isLoading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>加载中...</p>
+    </div>
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+    </div>
+    <div v-else-if="getNotesByTab.length === 0" class="empty-state">
+      <p>暂无内容</p>
+    </div>
+    <div v-else class="note-list">
+      <div v-for="note in getNotesByTab" :key="note.id" class="note-card" @click="showPostDetail(note)">
+        <img v-if="note.image" class="note-img" :src="note.image" :alt="note.title">
         <div class="note-title">{{ note.title }}</div>
         <div class="note-meta">
-          <img :src="note.authorAvatar" alt="用户头像">
-          {{ note.authorName }}
-          <span class="note-like"><i>❤</i>{{ note.likes }}</span>
+          <span class="note-like"><img src="/assets/images/爱心.svg" alt="爱心" class="note-like-icon">{{ note.likes }}</span>
+          <span class="note-comment"><img src="/assets/images/评论.svg" alt="评论" class="note-comment-icon">{{ note.comments }}</span>
         </div>
       </div>
     </div>
@@ -47,6 +56,13 @@
       </div>
     </div>
   </div>
+
+  <PostDetail
+    v-if="showDetail"
+    :show="showDetail"
+    :post-detail="selectedPost"
+    @close="closePostDetail"
+  />
 </template>
 
 <script setup>
@@ -54,6 +70,7 @@ import { useProfileData } from '../utils/useProfileData.js'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../utils/useAuth.js'
 import { useRouter } from 'vue-router'
+import PostDetail from '../views/PostDetail.vue'
 
 const router = useRouter();
 const auth = useAuth();
@@ -64,8 +81,36 @@ const {
   likes,
   activeTab,
   getNotesByTab,
-  initData
+  initData,
+  isLoading,
+  error,
+  handleTabChange
 } = useProfileData()
+
+// PostDetail 相关状态
+const showDetail = ref(false)
+const selectedPost = ref(null)
+
+const showPostDetail = (post) => {
+  selectedPost.value = {
+    id: post.id,
+    title: post.title,
+    description: post.content,
+    username: post.authorName,
+    avatar: post.authorAvatar,
+    images: post.image ? [post.image] : [],
+    likeCount: post.likes,
+    collectCount: 0,
+    commentCount: post.comments,
+    createdAt: post.createdAt
+  }
+  showDetail.value = true
+}
+
+const closePostDetail = () => {
+  showDetail.value = false
+  selectedPost.value = null
+}
 
 const handleUserInfoUpdate = (event) => {
   console.log('Profile: 收到用户信息更新事件', event.detail);
@@ -79,7 +124,6 @@ const handleEditClick = () => {
 onMounted(() => {
   console.log('Profile组件挂载');
   window.addEventListener('userInfoUpdated', handleUserInfoUpdate);
-  // 确保组件挂载时初始化数据
   initData();
 })
 
@@ -87,18 +131,18 @@ onUnmounted(() => {
   window.removeEventListener('userInfoUpdated', handleUserInfoUpdate)
 })
 
-// 暴露给父组件调用
-import { defineExpose } from 'vue'
 defineExpose({ initData })
 </script>
 
 <style scoped>
 @import '../styles/profile.css';
 
-.profile-message {
-  text-align: center;
-  padding: 40px;
-  font-size: 1.2rem;
-  color: #666;
+.note-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.note-card:hover {
+  transform: scale(1.02);
 }
 </style>

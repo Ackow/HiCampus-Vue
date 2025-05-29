@@ -129,7 +129,7 @@ onUnmounted(() => {
 
 .content-area {
   flex: 1;
-  padding: 10px 30px;
+  /* padding: 10px 30px; */
   margin-left: 300px; 
   background-color: #fff;
 }

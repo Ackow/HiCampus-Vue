@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 // 创建计数器模型
 const CounterSchema = new mongoose.Schema({
@@ -39,8 +40,28 @@ const userSchema = new mongoose.Schema({
     },
     avatar: { 
         type: String, 
-        default: 'default-avatar.jpg'
+        default: 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
     },
+    bio: {
+        type: String,
+        default: ''
+    },
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Article'
+    }],
+    likes: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Article'
+    }],
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
     age: { type: Number },
     gender: { type: String, enum: ['male', 'female'] },
     createdAt: { 
@@ -51,6 +72,8 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, {
+    timestamps: true
 });
 
 // 在保存用户之前生成uid
@@ -63,12 +86,25 @@ userSchema.pre('save', async function(next) {
         );
         this.uid = counter.seq.toString().padStart(12, '0');
     }
-    next();
+    if (!this.isModified('password')) return next();
+    
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
+    }
 });
 
 // 添加索引
 userSchema.index({ username: 1 });
 userSchema.index({ studentId: 1 });
 userSchema.index({ nickname: 1 });
+
+// 验证密码方法
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema); 

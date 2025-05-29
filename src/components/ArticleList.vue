@@ -68,7 +68,8 @@ const categories = [
   { label: '社团活动', value: '#社团活动' },
   { label: '校园美食', value: '#校园美食' },
   { label: '校园风景', value: '#校园风景' },
-  { label: '校园趣事', value: '#校园趣事' }
+  { label: '校园趣事', value: '#校园趣事' },
+  { label: '游戏', value: '#游戏' }
 ];
 
 const {
@@ -132,60 +133,4 @@ onMounted(() => {
 
 <style scoped>
 @import '../styles/articleList.css';
-
-.article-container {
-  width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.category-tabs {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #eee;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.category-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.category-tab {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-  background-color: #f5f5f5;
-  border: 1px solid transparent;
-}
-
-.category-tab:hover {
-  background-color: #f0f2f5;
-  color: #7BB4F4;
-}
-
-.category-tab.active {
-  background-color: #7BB4F4;
-  color: white;
-  border-color: #7BB4F4;
-}
-
-.content-card {
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.content-card:hover {
-  transform: translateY(-2px);
-}
 </style> 

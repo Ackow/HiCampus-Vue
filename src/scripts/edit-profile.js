@@ -48,7 +48,7 @@ export function useEditProfile() {
         const formData = new FormData()
         formData.append('avatar', file)
 
-        const response = await fetch('http://localhost:3000/api/avatar', {
+        const response = await fetch('http://localhost:3000/api/upload/avatar', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -64,7 +64,7 @@ export function useEditProfile() {
         const data = await response.json()
         
         // 从服务器获取最新的用户信息
-        const userResponse = await fetch('http://localhost:3000/api/profile', {
+        const userResponse = await fetch('http://localhost:3000/api/user', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -173,7 +173,7 @@ export function useEditProfile() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/profile', {
+      const response = await fetch('http://localhost:3000/api/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
