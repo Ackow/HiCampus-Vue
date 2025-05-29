@@ -12,7 +12,7 @@
     </div>
 
     <div class="content-grid">
-      <div v-for="article in filteredArticles" :key="article._id" class="content-card">
+      <div v-for="article in filteredArticles" :key="article._id" class="content-card" @click.stop="openPostDetail(article)">
         <div class="card-image">
           <img :src="getArticleImage(article)" 
                alt="内容图片"
@@ -39,15 +39,27 @@
     </div>
     <div v-if="isLoading" class="loading-spinner">加载中...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
+
+    <!-- 帖子详情弹窗 -->
+    <PostDetail 
+      v-if="showPostDetail"
+      :show="showPostDetail"
+      :post-detail="currentPost"
+      @close="closePostDetail"
+      @toggle-like="toggleLike"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useArticleList } from '../scripts/ArticleList.js';
+import PostDetail from '../views/PostDetail.vue';
 import '../styles/articleList.css';
 
 const selectedCategory = ref('all');
+const showPostDetail = ref(false);
+const currentPost = ref(null);
 
 const categories = [
   { label: '全部', value: 'all' },
@@ -80,10 +92,42 @@ const filteredArticles = computed(() => {
 
 const handleCategoryChange = (category) => {
   selectedCategory.value = category;
-  console.log('当前分类:', category);
-  console.log('文章列表:', articles.value);
-  console.log('筛选后的文章:', filteredArticles.value);
 };
+
+const openPostDetail = (article) => {
+  console.log('Opening post detail:', article); // 添加调试日志
+  currentPost.value = {
+    id: article._id,
+    username: article.creator.nickname,
+    avatar: getAvatarUrl(article.creator),
+    title: article.title,
+    description: article.content,
+    images: article.images ? article.images.map(img => `http://localhost:3000/uploads/images/${img}`) : [],
+    likes: article.likeCount || 0,
+    isLiked: false,
+    comments: article.comments || []
+  };
+  showPostDetail.value = true;
+  console.log('Post detail state:', { showPostDetail: showPostDetail.value, currentPost: currentPost.value }); // 添加调试日志
+};
+
+const closePostDetail = () => {
+  console.log('Closing post detail'); // 添加调试日志
+  showPostDetail.value = false;
+  currentPost.value = null;
+};
+
+const toggleLike = () => {
+  if (currentPost.value) {
+    currentPost.value.isLiked = !currentPost.value.isLiked;
+    currentPost.value.likes += currentPost.value.isLiked ? 1 : -1;
+  }
+};
+
+// 确保组件挂载后数据已经加载
+onMounted(() => {
+  console.log('ArticleList mounted, articles:', articles.value);
+});
 </script>
 
 <style scoped>
@@ -132,5 +176,16 @@ const handleCategoryChange = (category) => {
   background-color: #7BB4F4;
   color: white;
   border-color: #7BB4F4;
+}
+
+.content-card {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.content-card:hover {
+  transform: translateY(-2px);
 }
 </style> 

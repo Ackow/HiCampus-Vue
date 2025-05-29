@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import RegisterAndLogin from '../views/RegisterAndLogin.vue';
 import Publish from '../views/Publish.vue';
+import Notification from '../views/Notification.vue';
 
 const routes = [
   {
@@ -26,6 +27,15 @@ const routes = [
         path: 'edit-profile',
         name: 'EditProfile',
         component: () => import('../components/EditProfile.vue'),
+        meta: {
+          showSidebar: true,
+          showHeader: true
+        }
+      },
+      {
+        path: 'notification',
+        name: 'Notification',
+        component: Notification,
         meta: {
           showSidebar: true,
           showHeader: true

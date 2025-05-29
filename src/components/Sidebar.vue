@@ -3,7 +3,7 @@
     <div class="sidebar-menu">
       <a href="/" class="select" @click.prevent="router.push('/')">首页</a>
       <a href="/publish" @click.prevent="router.push('/publish')">发布</a>
-      <a href="#message">消息</a>
+      <a href="/notification" @click.prevent="router.push('/notification')">消息</a>
     </div>
   </div>
 </template>

@@ -41,7 +41,7 @@ watch(() => route.name, (newName) => {
   } else if (newName === 'EditProfile') {
     showProfile.value = false;
     showEditProfile.value = true;
-  } else if (newName === 'Home') {
+  } else if (newName === 'Home' || newName === 'Notification') {
     showProfile.value = false;
     showEditProfile.value = false;
   }
@@ -66,6 +66,9 @@ onMounted(() => {
   } else if (route.name === 'EditProfile') {
     showProfile.value = false;
     showEditProfile.value = true;
+  } else if (route.name === 'Home' || route.name === 'Notification') {
+    showProfile.value = false;
+    showEditProfile.value = false;
   }
   updateMainContainerWidth()
   window.addEventListener('resize', updateMainContainerWidth)
@@ -84,10 +87,10 @@ onUnmounted(() => {
         <Sidebar />
       </div>
       <div class="content-area">
-        <!-- 这里可以添加更多内容 -->
-        <Profile v-if="showProfile" ref="profileRef" />
-        <EditProfile v-if="showEditProfile" />
-        <ArticleList v-if="!showProfile && !showEditProfile" />
+        <router-view v-if="route.name === 'Notification'" />
+        <Profile v-else-if="showProfile" ref="profileRef" />
+        <EditProfile v-else-if="showEditProfile" />
+        <ArticleList v-else />
       </div>
     </div>
   </div>
