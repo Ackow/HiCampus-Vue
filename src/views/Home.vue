@@ -4,11 +4,18 @@ import Sidebar from '../components/Sidebar.vue'
 import Profile from '../components/Profile.vue'
 import EditProfile from '../components/EditProfile.vue'
 import ArticleList from '../components/ArticleList.vue'
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
+
+// 计算sidebar的偏移量
+const mainContainerWidth = ref(0)
+const sidebarTransform = computed(() => {
+  const offset = mainContainerWidth.value * -0.5
+  return `translateX(${Math.min(-400, Math.max(-1000, offset))}px)`
+})
+
 const showSidebar = computed(() => {
   return route.meta.showSidebar !== false;
 })
@@ -40,6 +47,13 @@ watch(() => route.name, (newName) => {
   }
 }, { immediate: true });
 
+const updateMainContainerWidth = () => {
+  const mainContainer = document.querySelector('.main-container')
+  if (mainContainer) {
+    mainContainerWidth.value = mainContainer.offsetWidth
+  }
+}
+
 onMounted(() => {
   console.log('Home组件挂载，当前路由名称:', route.name);
   // 页面加载时检查路由名称
@@ -53,14 +67,20 @@ onMounted(() => {
     showProfile.value = false;
     showEditProfile.value = true;
   }
+  updateMainContainerWidth()
+  window.addEventListener('resize', updateMainContainerWidth)
 });
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateMainContainerWidth)
+})
 </script>
 
 <template>
   <div class="home-container">
     <Header @init-profile="openProfile" />
     <div class="main-container">
-      <div class="sidebar-wrapper" v-if="showSidebar">
+      <div class="sidebar-wrapper" v-if="showSidebar" :style="{ transform: sidebarTransform }">
         <Sidebar />
       </div>
       <div class="content-area">
@@ -78,10 +98,12 @@ onMounted(() => {
   width: 100%;
   min-height: 100vh;
   background-color: #fff;
+  margin-top: 80px;
 }
 
 .main-container {
   display: flex;
+  width: 100%;
   max-width: 2000px;
   min-width: 800px;
   margin: 0 auto;
@@ -90,15 +112,22 @@ onMounted(() => {
 }
 
 .sidebar-wrapper {
+  position: fixed;
+  top: 80px;
+  left: 50%;
   width: 250px;
   flex-shrink: 0;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  background-color: #fff;
+  z-index: 1000;
 }
 
 .content-area {
-  flex: 1; /* 让内容区占据剩余空间 */
-  padding: 20px;
-  margin-top: 80px;
-  margin-left: 20px;
+  flex: 1;
+  padding: 10px 30px;
+  margin-left: 300px; 
   background-color: #fff;
 }
 </style>

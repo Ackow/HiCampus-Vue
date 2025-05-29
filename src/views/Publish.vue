@@ -3,7 +3,7 @@
     <div class="card">
       <h2 class="card-title">图文编辑 <span class="image-count">({{ images.length }}/9)</span></h2>
       <div class="image-upload-section">
-        <div class="upload-box" @click="triggerImageInput">
+        <div class="upload-box" @click="onAddClick">
           <img src="/assets/images/添加.svg" alt="添加" class="upload-icon">
           <span class="upload-text">添加</span>
           <input 
@@ -12,7 +12,7 @@
             accept="image/*" 
             multiple 
             style="display: none;"
-            @change="handleImageSelect"
+            @change="onImageSelect"
           >
         </div>
         <div class="image-preview-container">
@@ -46,17 +46,106 @@
       ></textarea>
 
       <div class="options-row">
-        <div class="option-tag">
+        <div class="option-tag" @click="showTopicSearch = true">
           <img src="/assets/images/话题.svg" alt="话题" class="option-icon">
           <span>话题</span>
+          <span v-if="topics.length" class="tag-count">({{ topics.length }})</span>
+          <!-- 话题选择弹窗 -->
+          <div v-if="showTopicSearch" class="search-modal">
+            <div class="modal-overlay" @click="showTopicSearch = false"></div>
+            <div class="search-popup" ref="topicSearchRef">
+              <div class="search-header">
+                <input 
+                  type="text" 
+                  v-model="topicQuery" 
+                  placeholder="输入话题，例如：校园生活、学习交流..."
+                  class="search-input"
+                >
+                <button class="close-btn" @click="showTopicSearch = false">×</button>
+              </div>
+              <div class="search-results">
+                <div class="recommended-topics">
+                  <div class="section-title">推荐话题</div>
+                  <div 
+                    v-for="topic in availableTopics" 
+                    :key="topic"
+                    class="topic-item"
+                    @click="handleTopicSelect(topic)"
+                  >
+                    {{ topic }}
+                  </div>
+                </div>
+                <div v-if="topicQuery" class="custom-topic">
+                  <button 
+                    class="add-custom-btn"
+                    @click="addCustomTopic"
+                  >
+                    添加话题 "{{ topicQuery }}"
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="option-tag">
+        <div class="option-tag" @click="showUserSearch = true">
           <img src="/assets/images/艾特.svg" alt="用户" class="option-icon">
           <span>用户</span>
+          <span v-if="mentions.length" class="tag-count">({{ mentions.length }})</span>
+          <!-- 用户搜索弹窗 -->
+          <div v-if="showUserSearch" class="search-modal">
+            <div class="modal-overlay" @click="showUserSearch = false"></div>
+            <div class="search-popup" ref="userSearchRef">
+              <div class="search-header">
+                <input 
+                  type="text" 
+                  v-model="userQuery" 
+                  @input="searchUsers($event.target.value)"
+                  placeholder="输入用户名或学号搜索..."
+                  class="search-input"
+                >
+                <button class="close-btn" @click="showUserSearch = false">×</button>
+              </div>
+              <div class="search-results">
+                <div v-if="searchResults.length === 0 && userQuery" class="no-results">
+                  未找到相关用户
+                </div>
+                <div 
+                  v-for="user in searchResults" 
+                  :key="user.id"
+                  class="search-item"
+                  @click="handleUserSelect(user)"
+                >
+                  <div class="user-info">
+                    <img 
+                      :src="user.avatar || '/assets/images/default-avatar.png'" 
+                      :alt="user.nickname || user.username"
+                      class="user-avatar"
+                    >
+                    <div class="user-details">
+                      <span class="user-name">{{ user.nickname || user.username }}</span>
+                      <span class="user-id">{{ user.studentId || '未设置学号' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="option-tag">
           <img src="/assets/images/定位.svg" alt="地点" class="option-icon">
           <span>地点</span>
+        </div>
+      </div>
+
+      <!-- 已选择的标签展示 -->
+      <div class="selected-tags" v-if="topics.length > 0 || mentions.length > 0">
+        <div v-for="topic in topics" :key="topic" class="selected-tag">
+          <span>{{ topic }}</span>
+          <button class="remove-tag" @click="removeTopic(topic)">×</button>
+        </div>
+        <div v-for="user in mentions" :key="user.id" class="selected-tag">
+          <span>@{{ user.name }}</span>
+          <button class="remove-tag" @click="removeMention(user.id)">×</button>
         </div>
       </div>
 
@@ -85,85 +174,54 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { usePublish } from '../scripts/publish'
+import { ref } from 'vue'
 
-const router = useRouter()
 const imageInput = ref(null)
-const title = ref('')
-const content = ref('')
-const isPublishing = ref(false)
 
 const {
+  title,
+  content,
   images,
+  mentions,
+  topics,
+  searchResults,
+  showTopicSearch,
+  showUserSearch,
+  topicQuery,
+  userQuery,
+  availableTopics,
+  isPublishing,
+  topicSearchRef,
+  userSearchRef,
   triggerImageInput,
   handleImageSelect,
   removeImage,
-  uploadImage,
-  createArticle
-} = usePublish(imageInput)
+  addMention,
+  removeMention,
+  addTopic,
+  removeTopic,
+  searchUsers,
+  handleUserSelect,
+  handleTopicSelect,
+  addCustomTopic,
+  handleClickOutside,
+  handlePublish
+} = usePublish()
 
-const handlePublish = async () => {
-  // 表单验证
-  if (!title.value.trim()) {
-    alert('请输入文章标题')
-    return
-  }
+// 处理图片选择
+const onImageSelect = (event) => {
+  console.log('图片选择事件触发')
+  handleImageSelect(event)
+}
 
-  if (!content.value.trim()) {
-    alert('请输入文章内容')
-    return
-  }
-
-  // 从localStorage获取用户信息和token
-  const userInfo = JSON.parse(localStorage.getItem('userInfo'))
-  const token = localStorage.getItem('token')
-  
-  if (!userInfo || !userInfo.id || !token) {
-    alert('请先登录')
-    return
-  }
-
-  try {
-    isPublishing.value = true
-
-    // 1. 先上传所有图片
-    const uploadedImages = []
-    for (const image of images.value) {
-      try {
-        const imageUrl = await uploadImage(image.file)
-        uploadedImages.push({ imageUrl })
-      } catch (error) {
-        console.error('图片上传失败:', error)
-        throw new Error('图片上传失败，请重试')
-      }
-    }
-
-    // 2. 创建文章数据
-    const articleData = {
-      title: title.value,
-      content: content.value,
-      images: uploadedImages
-    }
-
-    // 3. 发布文章
-    await createArticle(articleData)
-
-    // 4. 发布成功
-    alert('发布成功！')
-    // 清空表单
-    title.value = ''
-    content.value = ''
-    images.value = []
-    // 跳转到首页
-    router.push('/')
-
-  } catch (error) {
-    console.error('发布错误:', error)
-    alert('发布失败：' + error.message)
-  } finally {
-    isPublishing.value = false
+// 处理点击添加按钮
+const onAddClick = () => {
+  console.log('添加按钮点击')
+  if (imageInput.value) {
+    imageInput.value.click()
+  } else {
+    console.error('imageInput 引用未找到')
   }
 }
 </script>

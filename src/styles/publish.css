@@ -146,6 +146,7 @@
 
 /* Options Row */
 .options-row {
+  position: relative;
   display: flex;
   gap: 1.25rem;
   margin-bottom: 1.875rem;
@@ -153,38 +154,48 @@
 }
 
 .option-tag {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 0.5rem 0.9375rem;
-  border: 0.0625rem solid #E0E0E0;
-  border-radius: 1.25rem;
-  font-size: 0.875rem;
-  color: #666;
+  gap: 6px;
+  padding: 8px 14px;
+  background-color: #f8f9fa;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #333;
 }
 
 .option-tag:hover {
-  background-color: #F0F5FF;
-  border-color: #A3C9F0;
-  color: #4A90E2;
+  background-color: #f0f2f5;
+  border-color: #7BB4F4;
+}
+
+.option-tag:hover > .option-icon {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(98%) saturate(1232%) hue-rotate(183deg) brightness(101%) contrast(101%);
+}
+
+.option-tag:hover > span {
+  color: #7BB4F4;
+}
+
+.option-tag:hover > .tag-count {
+  background: rgba(123, 180, 244, 0.1);
+  color: #7BB4F4;
 }
 
 .option-icon {
-  margin-right: 0.3rem;
-  color: #999;
-  transition: color 0.3s ease;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 18px;
+  height: 18px;
+  transition: all 0.2s ease;
 }
 
-.setting-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-.option-tag:hover .option-icon {
-  color: #4A90E2;
+.tag-count {
+  margin-left: 4px;
+  color: #666;
+  font-size: 12px;
 }
 
 /* Settings Row */
@@ -207,6 +218,8 @@
 }
 
 .setting-icon {
+  width: 1.125rem;
+  height: 1.125rem;
   margin-right: 0.5rem;
   font-size: 1.125rem;
   color: #999;
@@ -321,4 +334,422 @@
     padding: 0.625rem 1.5625rem;
     font-size: 0.9375rem;
   }
-} 
+}
+
+/* 遮罩层 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  z-index: 999;
+  cursor: default;
+}
+
+/* 搜索弹窗样式 */
+.search-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  width: 320px;
+}
+
+.search-popup * {
+  color: inherit;
+}
+
+.search-header {
+  display: flex;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+}
+
+.search-results {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-item:last-child {
+  border-bottom: none;
+}
+
+.search-item:hover {
+  background-color: #f8f9fa;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.user-id {
+  font-size: 12px;
+  color: #666;
+}
+
+.recommended-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+}
+
+.topic-item {
+  background-color: #f0f0f0;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.custom-topic {
+  padding: 10px;
+  border-top: 1px solid #eee;
+}
+
+.add-custom-btn {
+  width: 100%;
+  padding: 8px;
+  background-color: #7BB4F4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-custom-btn:hover {
+  background-color: #6eacf1;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.selected-tag {
+  display: flex;
+  align-items: center;
+  background-color: #e8f5e9;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.remove-tag {
+  margin-left: 5px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.remove-tag:hover {
+  color: #f44336;
+}
+
+/* 分类标签样式 */
+.category-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.category-tab {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+}
+
+.category-tab:hover {
+  background-color: #f0f2f5;
+  color: #7BB4F4;
+}
+
+.category-tab.active {
+  background-color: #7BB4F4;
+  color: white;
+  border-color: #7BB4F4;
+}
+
+/* 搜索模态框 */
+.search-modal {
+  /* position: absolute; */
+  z-index: 1000;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background-color: rgba(0, 0, 0, 0.5); */
+  z-index: 999;
+}
+
+.search-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  width: 320px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.search-header {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: #7BB4F4;
+  box-shadow: 0 0 0 2px rgba(123, 180, 244, 0.1);
+  outline: none;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.section-title {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.no-results {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* 用户搜索结果项 */
+.search-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-item:hover {
+  background-color: #f8f9fa;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.user-id {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 话题相关样式 */
+.recommended-topics {
+  padding: 8px 16px;
+}
+
+.topic-item {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 4px;
+  background-color: #f0f2f5;
+  border-radius: 16px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.topic-item:hover {
+  background-color: #e6e8eb;
+  color: #7BB4F4;
+}
+
+.custom-topic {
+  padding: 16px;
+  border-top: 1px solid #eee;
+}
+
+.add-custom-btn {
+  width: 100%;
+  padding: 8px 16px;
+  background-color: #7BB4F4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-custom-btn:hover {
+  background-color: #6eacf1;
+}
+
+/* 已选择的标签 */
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.selected-tag {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: #e8f5e9;
+  border-radius: 16px;
+  font-size: 14px;
+  color: #333;
+}
+
+.remove-tag {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.remove-tag:hover {
+  color: #f44336;
+  background-color: rgba(244, 67, 54, 0.1);
+}

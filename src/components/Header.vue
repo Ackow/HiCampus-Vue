@@ -74,7 +74,7 @@
 
 <script setup>
 import { useSearch } from '../utils/useSearch.js'
-import { ref, onMounted, defineEmits, onUnmounted } from 'vue';
+import { ref, onMounted, defineEmits, onUnmounted, nextTick } from 'vue';
 import { useAuth } from '../utils/useAuth.js';
 import { useRouter } from 'vue-router';
 
@@ -94,14 +94,30 @@ const isLoggedIn = ref(auth.checkLoginStatus());
 const userInfo = ref(auth.getUserInfo());
 
 const handleUserInfoUpdate = (event) => {
-  userInfo.value = event.detail
+  console.log('Header: 收到用户信息更新事件', event.detail)
+  if (event.detail) {
+    // 立即更新用户信息
+    userInfo.value = event.detail
+    
+    // 强制更新头像显示
+    const avatarImg = document.querySelector('.user-avatar')
+    if (avatarImg) {
+      avatarImg.src = userInfo.value.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+    }
+  }
 }
 
 onMounted(() => {
+  // 初始化时获取最新用户信息
+  userInfo.value = auth.getUserInfo()
+  
+  // 设置更新回调
   auth.setUpdateUICallback((status) => {
-    isLoggedIn.value = status;
-    userInfo.value = auth.getUserInfo();
-  });
+    isLoggedIn.value = status
+    userInfo.value = auth.getUserInfo()
+  })
+  
+  // 添加事件监听
   window.addEventListener('userInfoUpdated', handleUserInfoUpdate)
 });
 

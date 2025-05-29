@@ -36,6 +36,17 @@
           </div>
 
           <div class="form-group">
+            <label>学号</label>
+            <input 
+              type="text" 
+              class="form-input student-id" 
+              v-model="formData.studentId"
+              placeholder="请输入学号（选填）" 
+              maxlength="20"
+            >
+          </div>
+
+          <div class="form-group">
             <label>年龄</label>
             <input 
               type="text" 

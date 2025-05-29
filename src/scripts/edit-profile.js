@@ -5,6 +5,7 @@ export function useEditProfile() {
   const avatarInput = ref(null)
   const formData = ref({
     nickname: '',
+    studentId: '',
     age: '',
     gender: '',
     newPassword: '',
@@ -16,6 +17,7 @@ export function useEditProfile() {
     const userInfo = JSON.parse(localStorage.getItem('userInfo'))
     if (userInfo) {
       formData.value.nickname = userInfo.nickname
+      formData.value.studentId = userInfo.studentId
       formData.value.age = userInfo.age
       formData.value.gender = userInfo.gender
       avatarUrl.value = userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
@@ -46,29 +48,56 @@ export function useEditProfile() {
         const formData = new FormData()
         formData.append('avatar', file)
 
-        const response = await fetch('http://localhost:3000/api/users/avatar', {
+        const response = await fetch('http://localhost:3000/api/avatar', {
           method: 'POST',
-          body: formData,
-          credentials: 'include'
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
         })
 
         if (!response.ok) {
-          throw new Error('上传失败')
+          const errorData = await response.json()
+          throw new Error(errorData.message || '上传失败')
         }
 
         const data = await response.json()
-        const newAvatarUrl = `http://localhost:3000/uploads/avatars/${data.filename}`
         
-        // 更新头像显示
-        avatarUrl.value = newAvatarUrl
+        // 从服务器获取最新的用户信息
+        const userResponse = await fetch('http://localhost:3000/api/profile', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        })
 
-        // 更新用户信息
-        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
-        userInfo.avatar = newAvatarUrl
-        localStorage.setItem('userInfo', JSON.stringify(userInfo))
+        if (!userResponse.ok) {
+          throw new Error('获取用户信息失败')
+        }
+
+        const userData = await userResponse.json()
+        const updatedUserInfo = userData.user
+
+        // 更新本地存储
+        localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo))
+
+        // 更新头像显示
+        avatarUrl.value = updatedUserInfo.avatar
 
         // 触发自定义事件，通知其他组件更新
-        window.dispatchEvent(new CustomEvent('userInfoUpdated', { detail: userInfo }))
+        const event = new CustomEvent('userInfoUpdated', { 
+          detail: updatedUserInfo,
+          bubbles: true,
+          composed: true
+        })
+        
+        // 确保事件被触发
+        setTimeout(() => {
+          window.dispatchEvent(event)
+          // 重新加载用户信息以确保数据同步
+          loadUserInfo()
+        }, 0)
 
         alert('头像上传成功')
       } catch (error) {
@@ -98,6 +127,11 @@ export function useEditProfile() {
       return
     }
 
+    if (formData.value.studentId && formData.value.studentId.length > 20) {
+      alert('学号长度不能超过20位')
+      return
+    }
+
     if (formData.value.age.length > 2) {
       alert('年龄必须在1-99岁之间')
       return
@@ -119,6 +153,9 @@ export function useEditProfile() {
     if (formData.value.nickname && formData.value.nickname !== userInfo.nickname) {
       updateData.nickname = formData.value.nickname
     }
+    if (formData.value.studentId !== userInfo.studentId) {
+      updateData.studentId = formData.value.studentId
+    }
     if (formData.value.age && parseInt(formData.value.age) !== userInfo.age) {
       updateData.age = parseInt(formData.value.age)
     }
@@ -136,7 +173,7 @@ export function useEditProfile() {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/api/user/update', {
+      const response = await fetch('http://localhost:3000/api/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -153,6 +190,7 @@ export function useEditProfile() {
         const updatedUserInfo = {
           ...currentUserInfo,
           nickname: formData.value.nickname,
+          studentId: formData.value.studentId,
           age: parseInt(formData.value.age),
           gender: formData.value.gender
         }

@@ -18,6 +18,7 @@ export function useAuth() {
   const registerForm = reactive({
     username: '',
     nickname: '',
+    studentId: '',
     password: '',
     confirmPassword: ''
   })
@@ -33,6 +34,16 @@ export function useAuth() {
   const updateUI = (isLoggedIn) => {
     if (updateUICallback) {
       updateUICallback(isLoggedIn);
+    }
+    // 触发用户信息更新事件
+    const userInfo = getUserInfo();
+    if (userInfo) {
+      const event = new CustomEvent('userInfoUpdated', {
+        detail: userInfo,
+        bubbles: true,
+        composed: true
+      });
+      window.dispatchEvent(event);
     }
   };
 
@@ -77,7 +88,12 @@ export function useAuth() {
       if (response.ok) {
         // 保存token和用户信息
         localStorage.setItem('token', result.token)
-        localStorage.setItem('userInfo', JSON.stringify(result.user))
+        // 确保头像URL是完整的
+        const userData = {
+          ...result.user,
+          avatar: result.user.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+        };
+        localStorage.setItem('userInfo', JSON.stringify(userData))
         localStorage.setItem('isLoggedIn', 'true')
         
         // 更新UI显示
@@ -105,12 +121,24 @@ export function useAuth() {
         return
       }
 
+      // 验证学号
+      if (!registerForm.studentId) {
+        alert('请输入学号')
+        return
+      }
+
+      if (!/^\d{8}$/.test(registerForm.studentId)) {
+        alert('学号必须是8位数字')
+        return
+      }
+
       console.log('开始注册请求:', {
         url: `${API_URL}/register`,
         data: {
           username: registerForm.username,
           password: registerForm.password,
-          nickname: registerForm.nickname
+          nickname: registerForm.nickname,
+          studentId: registerForm.studentId
         }
       })
 
@@ -123,7 +151,8 @@ export function useAuth() {
         body: JSON.stringify({
           username: registerForm.username,
           password: registerForm.password,
-          nickname: registerForm.nickname
+          nickname: registerForm.nickname,
+          studentId: registerForm.studentId
         })
       })
 
@@ -158,7 +187,19 @@ export function useAuth() {
   // 获取用户信息
   const getUserInfo = () => {
     const userInfo = localStorage.getItem('userInfo')
-    return userInfo ? JSON.parse(userInfo) : null
+    if (!userInfo) return null
+    
+    try {
+      const parsedInfo = JSON.parse(userInfo)
+      // 确保头像URL是完整的
+      if (parsedInfo.avatar && !parsedInfo.avatar.startsWith('http')) {
+        parsedInfo.avatar = `http://localhost:3000/uploads/avatars/${parsedInfo.avatar}`
+      }
+      return parsedInfo
+    } catch (error) {
+      console.error('解析用户信息失败:', error)
+      return null
+    }
   }
 
   // 退出登录
@@ -171,8 +212,16 @@ export function useAuth() {
     // 更新UI状态
     updateUI(false)
     
-    // 触发自定义事件通知其他组件
-    window.dispatchEvent(new CustomEvent('userInfoUpdated', { detail: null }))
+    // 退出登录后，触发用户信息更新事件
+    const userInfo = getUserInfo();
+    if (userInfo) {
+      const event = new CustomEvent('userInfoUpdated', {
+        detail: null,
+        bubbles: true,
+        composed: true
+      });
+      window.dispatchEvent(event);
+    }
     
     // 导航到首页
     router.push('/')

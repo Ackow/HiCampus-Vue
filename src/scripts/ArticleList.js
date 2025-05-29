@@ -37,7 +37,7 @@ export function useArticleList() {
   };
 
   // 加载文章
-  const loadArticles = async (page = 1, limit = 8) => {
+  const loadArticles = async (page = 1, limit = 12) => {
     if (isLoading.value || !hasMore.value) return;
 
     try {

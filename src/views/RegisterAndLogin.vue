@@ -51,7 +51,22 @@
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="8" rx="4"/><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </span>
+                <input 
+                  v-model="registerForm.studentId" 
+                  type="text" 
+                  name="studentId" 
+                  placeholder="请输入学号" 
+                  required 
+                  maxlength="8"
+                  pattern="[0-9]{8}"
+                  title="请输入8位数字学号"
+                />
+              </div>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </span>
                 <input :type="showPassword ? 'text' : 'password'" v-model="registerForm.password" name="password" placeholder="请输入密码" required />
                 <span class="password-toggle" data-target="password" @click="togglePassword">
@@ -60,7 +75,7 @@
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="8" rx="4"/><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                 </span>
                 <input :type="showConfirmPassword ? 'text' : 'password'" v-model="registerForm.confirmPassword" name="confirmPassword" placeholder="请确认密码" required />
                 <span class="password-toggle" data-target="confirmPassword" @click="toggleConfirmPassword">

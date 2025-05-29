@@ -1,37 +1,63 @@
 <template>
-  <div class="content-grid">
-    <div v-for="article in articles" :key="article._id" class="content-card">
-      <div class="card-image">
-        <img :src="getArticleImage(article)" 
-             alt="内容图片"
-             @error="handleImageError">
+  <div class="article-container">
+    <div class="category-tabs">
+      <div 
+        v-for="category in categories" 
+        :key="category.value"
+        :class="['category-tab', { active: selectedCategory === category.value }]"
+        @click="handleCategoryChange(category.value)"
+      >
+        {{ category.label }}
       </div>
-      <div class="card-content">
-        <h3 class="card-title">{{ article.title }}</h3>
-        <p class="card-description">{{ article.content }}</p>
-        <div class="card-footer">
-          <div class="user-info">
-            <img :src="getAvatarUrl(article.creator)" 
-                 alt="用户头像" 
-                 class="user-avatar-small"
-                 @error="handleAvatarError">
-            <span class="username">{{ article.creator.nickname }}</span>
-          </div>
-          <div class="interaction-info">
-            <span class="likes">❤️ {{ article.likeCount || 0 }}</span>
-            <span class="comments">💬 {{ article.commentCount || 0 }}</span>
+    </div>
+
+    <div class="content-grid">
+      <div v-for="article in filteredArticles" :key="article._id" class="content-card">
+        <div class="card-image">
+          <img :src="getArticleImage(article)" 
+               alt="内容图片"
+               @error="handleImageError">
+        </div>
+        <div class="card-content">
+          <h3 class="card-title">{{ article.title }}</h3>
+          <p class="card-description">{{ article.content }}</p>
+          <div class="card-footer">
+            <div class="user-info">
+              <img :src="getAvatarUrl(article.creator)" 
+                   alt="用户头像" 
+                   class="user-avatar-small"
+                   @error="handleAvatarError">
+              <span class="username">{{ article.creator.nickname }}</span>
+            </div>
+            <div class="interaction-info">
+              <span class="likes"><img src="/assets/images/爱心.svg" alt="点赞" class="btn-icon"> {{ article.likeCount || 0 }}</span>
+              <span class="comments"><img src="/assets/images/评论.svg" alt="评论" class="btn-icon"> {{ article.commentCount || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
+    <div v-if="isLoading" class="loading-spinner">加载中...</div>
+    <div v-if="error" class="error-message">{{ error }}</div>
   </div>
-  <div v-if="isLoading" class="loading-spinner">加载中...</div>
-  <div v-if="error" class="error-message">{{ error }}</div>
 </template>
 
 <script setup>
-import { useArticleList } from './ArticleList.js';
+import { ref, computed } from 'vue';
+import { useArticleList } from '../scripts/ArticleList.js';
 import '../styles/articleList.css';
+
+const selectedCategory = ref('all');
+
+const categories = [
+  { label: '全部', value: 'all' },
+  { label: '校园生活', value: '#校园生活' },
+  { label: '学习交流', value: '#学习交流' },
+  { label: '社团活动', value: '#社团活动' },
+  { label: '校园美食', value: '#校园美食' },
+  { label: '校园风景', value: '#校园风景' },
+  { label: '校园趣事', value: '#校园趣事' }
+];
 
 const {
   articles,
@@ -42,105 +68,69 @@ const {
   handleImageError,
   handleAvatarError
 } = useArticleList();
+
+const filteredArticles = computed(() => {
+  if (selectedCategory.value === 'all') {
+    return articles.value;
+  }
+  return articles.value.filter(article => 
+    article.topics && article.topics.includes(selectedCategory.value)
+  );
+});
+
+const handleCategoryChange = (category) => {
+  selectedCategory.value = category;
+  console.log('当前分类:', category);
+  console.log('文章列表:', articles.value);
+  console.log('筛选后的文章:', filteredArticles.value);
+};
 </script>
 
 <style scoped>
+@import '../styles/articleList.css';
 
-.content-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
-}
-
-.content-card {
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.content-card:hover {
-  transform: translateY(-5px);
-}
-
-.card-image {
+.article-container {
   width: 100%;
-  height: 200px;
-  overflow: hidden;
-}
-
-.card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.card-content {
-  padding: 15px;
-}
-
-.card-title {
-  margin: 0 0 10px;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.card-description {
-  margin: 0 0 15px;
-  font-size: 0.9rem;
-  color: #666;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 15px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.user-avatar-small {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.username {
-  font-size: 0.9rem;
-  color: #333;
-}
-
-.interaction-info {
-  display: flex;
-  gap: 15px;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.loading-spinner {
-  text-align: center;
+  max-width: 1600px;
+  margin: 0 auto;
   padding: 20px;
-  color: #666;
 }
 
-.error-message {
-  text-align: center;
-  padding: 20px;
-  color: #ff4d4f;
-  background: #fff2f0;
-  border-radius: 4px;
-  margin: 10px 0;
+.category-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.category-tab {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  background-color: #f5f5f5;
+  border: 1px solid transparent;
+}
+
+.category-tab:hover {
+  background-color: #f0f2f5;
+  color: #7BB4F4;
+}
+
+.category-tab.active {
+  background-color: #7BB4F4;
+  color: white;
+  border-color: #7BB4F4;
 }
 </style> 
