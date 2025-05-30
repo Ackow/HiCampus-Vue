@@ -179,14 +179,14 @@ const createArticle = async (req, res) => {
             });
         }
 
-        console.log('创建文章数据:', {
-            creator: req.user.userId,
-            title,
-            content,
-            imagesCount: images ? images.length : 0,
-            mentionedUsersCount: mentionedUsers ? mentionedUsers.length : 0,
-            topicsCount: topics ? topics.length : 0
-        });
+        // console.log('创建文章数据:', {
+        //     creator: req.user.userId,
+        //     title,
+        //     content,
+        //     imagesCount: images ? images.length : 0,
+        //     mentionedUsersCount: mentionedUsers ? mentionedUsers.length : 0,
+        //     topicsCount: topics ? topics.length : 0
+        // });
 
         // 创建文章
         const article = new Article({
@@ -256,7 +256,7 @@ const getArticleComments = async (req, res) => {
             .populate('commenter', 'nickname avatar');
         
         console.log('找到评论数量:', comments.length);
-        console.log('评论数据:', comments);
+        // console.log('评论数据:', comments);
 
         res.json(comments);
     } catch (error) {
@@ -315,15 +315,19 @@ const getUserArticles = async (req, res) => {
     try {
         const articles = await Article.find({ creator: req.user.userId })
             .sort({ createdAt: -1 })
-            .populate('creator', 'username nickname avatar')
-            .select('title content likeCount commentCount createdAt');
+            .populate('creator', 'nickname avatar');
 
         // 获取每篇文章的图片
         const articlesWithImages = await Promise.all(articles.map(async (article) => {
-            const images = await Image.find({ article: article._id }).select('imageUrl');
+            const images = await Image.find({ article: article._id });
             return {
                 ...article.toObject(),
-                images: images.map(img => img.imageUrl)
+                images: images.map(img => img.imageUrl.split('/').pop()),
+                creator: article.creator ? {
+                    ...article.creator.toObject(),
+                    avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
+                } : null,
+                isLiked: article.likedBy.includes(req.user.userId)
             };
         }));
 
@@ -337,20 +341,27 @@ const getUserArticles = async (req, res) => {
 // 获取用户收藏的文章
 const getUserFavorites = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).populate({
-            path: 'favorites',
-            populate: {
-                path: 'creator',
-                select: 'username nickname avatar'
-            }
-        });
+        const user = await User.findById(req.user.userId)
+            .populate({
+                path: 'favorites',
+                populate: {
+                    path: 'creator',
+                    select: 'nickname avatar'
+                }
+            });
 
         // 获取每篇文章的图片
         const articlesWithImages = await Promise.all(user.favorites.map(async (article) => {
-            const images = await Image.find({ article: article._id }).select('imageUrl');
+            const images = await Image.find({ article: article._id });
             return {
                 ...article.toObject(),
-                images: images.map(img => img.imageUrl)
+                images: images.map(img => img.imageUrl.split('/').pop()),
+                creator: article.creator ? {
+                    ...article.creator.toObject(),
+                    avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
+                } : null,
+                isLiked: article.likedBy.includes(req.user.userId),
+                isCollected: true
             };
         }));
 
@@ -364,20 +375,26 @@ const getUserFavorites = async (req, res) => {
 // 获取用户点赞的文章
 const getUserLikes = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).populate({
-            path: 'likes',
-            populate: {
-                path: 'creator',
-                select: 'username nickname avatar'
-            }
-        });
+        const user = await User.findById(req.user.userId)
+            .populate({
+                path: 'likes',
+                populate: {
+                    path: 'creator',
+                    select: 'nickname avatar'
+                }
+            });
 
         // 获取每篇文章的图片
         const articlesWithImages = await Promise.all(user.likes.map(async (article) => {
-            const images = await Image.find({ article: article._id }).select('imageUrl');
+            const images = await Image.find({ article: article._id });
             return {
                 ...article.toObject(),
-                images: images.map(img => img.imageUrl)
+                images: images.map(img => img.imageUrl.split('/').pop()),
+                isLiked: true, // 从用户点赞列表获取的文章一定是已点赞的
+                creator: article.creator ? {
+                    ...article.creator.toObject(),
+                    avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
+                } : null
             };
         }));
 
@@ -409,6 +426,11 @@ const likeArticle = async (req, res) => {
         article.likeCount += 1;
         await article.save();
 
+        // 同步更新用户数据库
+        await User.findByIdAndUpdate(userId, {
+            $addToSet: { likes: articleId }
+        });
+
         res.json({ 
             message: '点赞成功',
             likeCount: article.likeCount
@@ -439,6 +461,11 @@ const unlikeArticle = async (req, res) => {
         article.likedBy = article.likedBy.filter(id => id.toString() !== userId);
         article.likeCount = Math.max(0, article.likeCount - 1);
         await article.save();
+
+        // 同步更新用户数据库
+        await User.findByIdAndUpdate(userId, {
+            $pull: { likes: articleId }
+        });
 
         res.json({ 
             message: '取消点赞成功',
@@ -472,6 +499,90 @@ const getLikeStatus = async (req, res) => {
     }
 };
 
+// 收藏文章
+const collectArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        // 检查是否已经收藏
+        if (article.collectedBy.includes(userId)) {
+            return res.status(400).json({ message: '已经收藏过了' });
+        }
+
+        // 添加收藏
+        article.collectedBy.push(userId);
+        article.collectCount += 1;
+        await article.save();
+
+        res.json({ 
+            message: '收藏成功',
+            collectCount: article.collectCount
+        });
+    } catch (error) {
+        console.error('收藏失败:', error);
+        res.status(500).json({ message: '收藏失败' });
+    }
+};
+
+// 取消收藏
+const uncollectArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        // 检查是否已经收藏
+        if (!article.collectedBy.includes(userId)) {
+            return res.status(400).json({ message: '还没有收藏' });
+        }
+
+        // 取消收藏
+        article.collectedBy = article.collectedBy.filter(id => id.toString() !== userId);
+        article.collectCount = Math.max(0, article.collectCount - 1);
+        await article.save();
+
+        res.json({ 
+            message: '取消收藏成功',
+            collectCount: article.collectCount
+        });
+    } catch (error) {
+        console.error('取消收藏失败:', error);
+        res.status(500).json({ message: '取消收藏失败' });
+    }
+};
+
+// 获取收藏状态
+const getCollectStatus = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        const isCollected = article.collectedBy.includes(userId);
+        res.json({ 
+            isCollected,
+            collectCount: article.collectCount || 0
+        });
+    } catch (error) {
+        console.error('获取收藏状态失败:', error);
+        res.status(500).json({ message: '获取收藏状态失败' });
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
@@ -484,5 +595,8 @@ module.exports = {
     getUserLikes,
     likeArticle,
     unlikeArticle,
-    getLikeStatus
+    getLikeStatus,
+    collectArticle,
+    uncollectArticle,
+    getCollectStatus
 }; 

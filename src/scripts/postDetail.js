@@ -115,7 +115,7 @@ export function usePostDetail(props, emit) {
 
   // 监听 postDetail 变化
   watch(() => props.postDetail, (newVal) => {
-    console.log('postDetail changed:', newVal)
+    // console.log('postDetail changed:', newVal)
     // 当 postDetail 变化时，如果当前是显示状态，重新加载评论
     if (props.show) {
       loadComments()
@@ -124,7 +124,7 @@ export function usePostDetail(props, emit) {
 
   // 组件挂载和卸载
   onMounted(() => {
-    console.log('PostDetail mounted, postDetail:', props.postDetail)
+    console.log('PostDetail mounted, postDetail')
   })
 
   onBeforeUnmount(() => {

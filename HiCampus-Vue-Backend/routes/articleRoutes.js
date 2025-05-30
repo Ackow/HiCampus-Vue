@@ -39,4 +39,13 @@ router.delete('/articles/:articleId/like', authenticateToken, articleController.
 // 获取文章点赞状态
 router.get('/articles/:articleId/like-status', authenticateToken, articleController.getLikeStatus);
 
+// 收藏文章
+router.post('/articles/:articleId/collect', authenticateToken, articleController.collectArticle);
+
+// 取消收藏
+router.delete('/articles/:articleId/collect', authenticateToken, articleController.uncollectArticle);
+
+// 获取文章收藏状态
+router.get('/articles/:articleId/collect-status', authenticateToken, articleController.getCollectStatus);
+
 module.exports = router;

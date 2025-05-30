@@ -39,8 +39,12 @@
       <p>暂无内容</p>
     </div>
     <div v-else class="note-list">
-      <div class="note-card" v-for="note in getNotesByTab" :key="note.id" @click="showPostDetail(note)">
-        <img :src="note.image" :alt="note.title" class="note-img" v-if="note.image">
+      <div class="note-card" v-for="note in getNotesByTab" :key="note._id" @click="showPostDetail(note)">
+        <img :src="getImageUrl(note)" 
+             :alt="note.title" 
+             class="note-img" 
+             v-if="hasImages(note)"
+             @error="handleImageError">
         <div class="note-title">{{ note.title }}</div>
         <div class="note-meta">
           <span class="note-like">
@@ -48,11 +52,11 @@
                  :alt="note.isLiked ? '已点赞' : '未点赞'" 
                  class="note-like-icon"
                  :class="{ 'liked': note.isLiked }">
-            {{ note.likes || 0 }}
+            {{ note.likeCount || 0 }}
           </span>
           <span class="note-comment">
             <img src="/assets/images/评论.svg" alt="评论" class="note-comment-icon">
-            {{ note.comments || 0 }}
+            {{ note.commentCount || 0 }}
           </span>
         </div>
       </div>
@@ -71,6 +75,8 @@
     :show="showDetail"
     :post-detail="selectedPost"
     @close="closePostDetail"
+    @update-like-count="handleLikeUpdate"
+    @update-collect-count="handleCollectUpdate"
   />
 </template>
 
@@ -90,9 +96,9 @@ const {
   likes,
   activeTab,
   getNotesByTab,
-  initData,
   isLoading,
   error,
+  initData,
   handleTabChange
 } = useProfileData()
 
@@ -100,20 +106,75 @@ const {
 const showDetail = ref(false)
 const selectedPost = ref(null)
 
+// 检查文章是否有图片
+const hasImages = (note) => {
+  return note.images && Array.isArray(note.images) && note.images.length > 0;
+}
+
+// 获取图片URL
+const getImageUrl = (note) => {
+  if (!hasImages(note)) {
+    return '';
+  }
+  
+  const image = note.images[0];
+  // console.log('处理图片数据:', image);
+  
+  // 如果图片是对象，尝试获取filename
+  if (typeof image === 'object' && image !== null) {
+    return `http://localhost:3000/uploads/images/${image.filename || image}`;
+  }
+  
+  // 如果图片是字符串，直接使用
+  if (typeof image === 'string') {
+    return `http://localhost:3000/uploads/images/${image}`;
+  }
+  
+  return '';
+}
+
+// 处理图片加载错误
+const handleImageError = (event) => {
+  console.error('图片加载失败:', event);
+  event.target.src = '/assets/images/default-image.jpg'; // 设置默认图片
+}
+
 const showPostDetail = (post) => {
+  // console.log('点击的文章数据:', post);
+  if (!post) {
+    console.error('文章数据为空');
+    return;
+  }
+
+  if (!post.creator) {
+    console.error('文章创建者信息缺失');
+    return;
+  }
+
+  // 处理图片数据
+  const processedImages = post.images ? post.images.map(img => {
+    if (typeof img === 'object' && img !== null) {
+      return `http://localhost:3000/uploads/images/${img.filename || img}`;
+    }
+    return `http://localhost:3000/uploads/images/${img}`;
+  }) : [];
+
   selectedPost.value = {
-    id: post.id,
+    id: post._id,
     title: post.title,
     description: post.content,
-    username: post.authorName,
-    avatar: post.authorAvatar,
-    images: post.image ? [post.image] : [],
-    likeCount: post.likes,
-    collectCount: 0,
-    commentCount: post.comments,
-    createdAt: post.createdAt
+    username: post.creator.nickname,
+    avatar: post.creator.avatar ? `http://localhost:3000/uploads/avatars/${post.creator.avatar}` : 'http://localhost:3000/uploads/avatars/default-avatar.jpg',
+    images: processedImages,
+    likeCount: post.likeCount || 0,
+    collectCount: post.collectCount || 0,
+    commentCount: post.commentCount || 0,
+    createdAt: post.createdAt,
+    isLiked: post.isLiked || false,
+    isCollected: post.isCollected || false
   }
-  showDetail.value = true
+  // console.log('处理后的文章详情数据:', selectedPost.value);
+  showDetail.value = true;
 }
 
 const closePostDetail = () => {
@@ -130,10 +191,48 @@ const handleEditClick = () => {
   router.push({ name: 'EditProfile' });
 }
 
+// 处理点赞更新
+const handleLikeUpdate = (data) => {
+  // console.log('收到点赞更新:', data);
+  const { articleId, likeCount, isLiked } = data;
+  
+  // 更新所有相关列表中的文章数据
+  [notes.value, favorites.value, likes.value].forEach(list => {
+    const article = list.find(item => item._id === articleId);
+    if (article) {
+      article.likeCount = likeCount;
+      article.isLiked = isLiked;
+    }
+  });
+}
+
+// 处理收藏更新
+const handleCollectUpdate = (data) => {
+  // console.log('收到收藏更新:', data);
+  const { articleId, collectCount, isCollected } = data;
+  
+  // 更新所有相关列表中的文章数据
+  [notes.value, favorites.value, likes.value].forEach(list => {
+    const article = list.find(item => item._id === articleId);
+    if (article) {
+      article.collectCount = collectCount;
+      article.isCollected = isCollected;
+    }
+  });
+}
+
 onMounted(() => {
   console.log('Profile组件挂载');
   window.addEventListener('userInfoUpdated', handleUserInfoUpdate);
-  initData();
+  
+  // 检查是否已登录
+  if (localStorage.getItem('token')) {
+    console.log('检测到登录token，开始初始化数据');
+    initData();
+  } else {
+    console.log('未检测到登录token，请先登录');
+    router.push('/login');
+  }
 })
 
 onUnmounted(() => {

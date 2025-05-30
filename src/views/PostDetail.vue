@@ -99,9 +99,12 @@
                    :class="{ 'liked': isLiked }">
               <span class="likes-number" :class="{ 'liked': isLiked }">{{ likeCount }}</span>
             </div>
-            <div class="collect-count">
-              <img src="/assets/images/收藏.svg" alt="收藏" class="btn-icon">
-              <span class="collect-number">{{ postDetail.collectCount || 0 }}</span>
+            <div class="collect-count" @click="toggleCollect">
+              <img :src="isCollected ? '/assets/images/收藏-黄.svg' : '/assets/images/收藏.svg'" 
+                   :alt="isCollected ? '已收藏' : '未收藏'" 
+                   class="btn-icon"
+                   :class="{ 'collected': isCollected }">
+              <span class="collect-number" :class="{ 'collected': isCollected }">{{ collectCount }}</span>
             </div>
             <div class="comments-count">
               <img src="/assets/images/评论.svg" alt="评论" class="btn-icon">
@@ -138,15 +141,49 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'toggle-like', 'comment-added', 'update-like-count'])
+const emit = defineEmits([
+  'close',
+  'toggle-like',
+  'comment-added',
+  'update-like-count',
+  'updateCollectCount'
+])
 
 // 图片预览相关状态
 const previewImageIndex = ref(0)
-const currentImageIndex = ref(0)
+const showImagePreview = ref(false)
 
 // 点赞状态
 const isLiked = ref(false)
 const likeCount = ref(0)
+
+// 收藏状态
+const isCollected = ref(false)
+const collectCount = ref(0)
+
+const {
+  currentImageIndex,
+  commentContent,
+  comments,
+  isLoading,
+  closeDetail,
+  handleAvatarError,
+  prevSlide,
+  nextSlide,
+  goToSlide,
+  submitComment
+} = usePostDetail(props, emit)
+
+// 打开图片预览
+const openImagePreview = (index) => {
+  previewImageIndex.value = index
+  showImagePreview.value = true
+}
+
+// 关闭图片预览
+const closeImagePreview = () => {
+  showImagePreview.value = false
+}
 
 // 检查点赞状态
 const checkLikeStatus = async () => {
@@ -195,38 +232,78 @@ const toggleLike = async () => {
   }
 }
 
+// 检查收藏状态
+const checkCollectStatus = async () => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/collect-status`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      isCollected.value = data.isCollected
+      collectCount.value = data.collectCount || 0
+    }
+  } catch (error) {
+    console.error('获取收藏状态失败:', error)
+  }
+}
+
+// 切换收藏状态
+const toggleCollect = async () => {
+  if (!localStorage.getItem('token')) {
+    alert('请先登录')
+    return
+  }
+
+  try {
+    const method = isCollected.value ? 'DELETE' : 'POST'
+    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/collect`, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      isCollected.value = !isCollected.value
+      collectCount.value = data.collectCount
+      // 更新父组件中的收藏数
+      emit('updateCollectCount', {
+        articleId: props.postDetail.id,
+        collectCount: data.collectCount,
+        isCollected: isCollected.value
+      })
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    alert('操作失败，请稍后重试')
+  }
+}
+
 // 监听 show 属性变化
 watch(() => props.show, async (newVal) => {
   if (newVal) {
     await checkLikeStatus()
+    await checkCollectStatus()
   }
 })
 
 // 监听 postDetail 变化
 watch(() => props.postDetail, async (newVal) => {
   if (newVal) {
-    // 当文章详情变化时，重新获取点赞状态
+    // 当文章详情变化时，重新获取点赞和收藏状态
     await checkLikeStatus()
+    await checkCollectStatus()
   }
 }, { immediate: true })
-
-const {
-  commentContent,
-  comments,
-  isLoading,
-  closeDetail,
-  handleAvatarError,
-  prevSlide,
-  nextSlide,
-  goToSlide,
-  showImagePreview,
-  closeImagePreview,
-  submitComment: submitCommentToServer
-} = usePostDetail(props, emit)
 
 // 在获取文章详情后检查点赞状态
 onMounted(async () => {
   await checkLikeStatus()
+  await checkCollectStatus()
 })
 </script>
 
@@ -235,5 +312,14 @@ onMounted(async () => {
 
 .detail-image {
   cursor: zoom-in;
+}
+
+.collect-count {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.collect-count:hover {
+  transform: scale(1.1);
 }
 </style> 
