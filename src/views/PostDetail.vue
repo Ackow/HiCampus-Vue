@@ -92,23 +92,21 @@
                 {{ isLoading ? '发送中...' : '发送' }}
               </button>
             </div>
-            <div class="likes-count" @click="toggleLike">
+            <div class="likes-count" :class="{ 'liked': isLiked }" @click="toggleLike">
               <img :src="isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
                    :alt="isLiked ? '已点赞' : '未点赞'" 
-                   class="btn-icon"
-                   :class="{ 'liked': isLiked }">
-              <span class="likes-number" :class="{ 'liked': isLiked }">{{ likeCount }}</span>
+                   class="btn-icon">
+              <span>{{ likeCount }}</span>
             </div>
-            <div class="collect-count" @click="toggleCollect">
+            <div class="collect-count" :class="{ 'collected': isCollected }" @click="toggleCollect">
               <img :src="isCollected ? '/assets/images/收藏-黄.svg' : '/assets/images/收藏.svg'" 
                    :alt="isCollected ? '已收藏' : '未收藏'" 
-                   class="btn-icon"
-                   :class="{ 'collected': isCollected }">
-              <span class="collect-number" :class="{ 'collected': isCollected }">{{ collectCount }}</span>
+                   class="btn-icon">
+              <span>{{ collectCount }}</span>
             </div>
             <div class="comments-count">
               <img src="/assets/images/评论.svg" alt="评论" class="btn-icon">
-              <span class="comments-number">{{ comments.length }}</span>
+              <span>{{ comments.length }}</span>
             </div>
           </div>
         </div>
