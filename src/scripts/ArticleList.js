@@ -1,11 +1,11 @@
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 export function useArticleList() {
   const route = useRoute();
   const articles = ref([]);
   const isLoading = ref(false);
-  const error = ref('');
+  const error = ref(null);
   const currentPage = ref(1);
   const hasMore = ref(true);
   const lastScrollTop = ref(0);
@@ -43,7 +43,7 @@ export function useArticleList() {
     try {
       console.log('加载文章');
       isLoading.value = true;
-      error.value = '';
+      error.value = null;
 
       const response = await fetch(`http://localhost:3000/api/articles?page=${page}&limit=${limit}`);
       if (!response.ok) {
@@ -62,11 +62,35 @@ export function useArticleList() {
       hasMore.value = currentPage.value < data.totalPages;
       currentPage.value++;
 
+      // 获取每篇文章的点赞状态
+      await checkArticlesLikeStatus();
+
     } catch (err) {
       console.error('加载文章失败:', err);
       error.value = '加载失败，请重试';
     } finally {
       isLoading.value = false;
+    }
+  };
+
+  // 检查每篇文章的点赞状态
+  const checkArticlesLikeStatus = async () => {
+    if (!localStorage.getItem('token')) return;
+    
+    for (const article of articles.value) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/articles/${article._id}/like-status`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          article.isLiked = data.isLiked;
+        }
+      } catch (error) {
+        console.error('获取点赞状态失败:', error);
+      }
     }
   };
 
@@ -118,6 +142,7 @@ export function useArticleList() {
     getArticleImage,
     getAvatarUrl,
     handleImageError,
-    handleAvatarError
+    handleAvatarError,
+    checkArticlesLikeStatus
   };
 } 

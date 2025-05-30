@@ -81,7 +81,7 @@ export function useEditProfile() {
 
         // 更新本地存储
         localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo))
-
+        
         // 更新头像显示
         avatarUrl.value = updatedUserInfo.avatar
 

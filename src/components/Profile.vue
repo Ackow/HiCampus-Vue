@@ -39,12 +39,21 @@
       <p>暂无内容</p>
     </div>
     <div v-else class="note-list">
-      <div v-for="note in getNotesByTab" :key="note.id" class="note-card" @click="showPostDetail(note)">
-        <img v-if="note.image" class="note-img" :src="note.image" :alt="note.title">
+      <div class="note-card" v-for="note in getNotesByTab" :key="note.id" @click="showPostDetail(note)">
+        <img :src="note.image" :alt="note.title" class="note-img" v-if="note.image">
         <div class="note-title">{{ note.title }}</div>
         <div class="note-meta">
-          <span class="note-like"><img src="/assets/images/爱心.svg" alt="爱心" class="note-like-icon">{{ note.likes }}</span>
-          <span class="note-comment"><img src="/assets/images/评论.svg" alt="评论" class="note-comment-icon">{{ note.comments }}</span>
+          <span class="note-like">
+            <img :src="note.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+                 :alt="note.isLiked ? '已点赞' : '未点赞'" 
+                 class="note-like-icon"
+                 :class="{ 'liked': note.isLiked }">
+            {{ note.likes || 0 }}
+          </span>
+          <span class="note-comment">
+            <img src="/assets/images/评论.svg" alt="评论" class="note-comment-icon">
+            {{ note.comments || 0 }}
+          </span>
         </div>
       </div>
     </div>

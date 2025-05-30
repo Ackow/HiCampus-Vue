@@ -93,8 +93,11 @@
               </button>
             </div>
             <div class="likes-count" @click="toggleLike">
-              <img src="/assets/images/爱心.svg" alt="爱心" class="btn-icon">
-              <span class="likes-number">{{ postDetail.likeCount || 0 }}</span>
+              <img :src="isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+                   :alt="isLiked ? '已点赞' : '未点赞'" 
+                   class="btn-icon"
+                   :class="{ 'liked': isLiked }">
+              <span class="likes-number" :class="{ 'liked': isLiked }">{{ likeCount }}</span>
             </div>
             <div class="collect-count">
               <img src="/assets/images/收藏.svg" alt="收藏" class="btn-icon">
@@ -120,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { usePostDetail } from '../scripts/postDetail'
 import ImagePreview from '../components/ImagePreview.vue'
 
@@ -135,25 +138,79 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'toggle-like', 'comment-added'])
+const emit = defineEmits(['close', 'toggle-like', 'comment-added', 'update-like-count'])
 
 // 图片预览相关状态
-const showImagePreview = ref(false)
 const previewImageIndex = ref(0)
+const currentImageIndex = ref(0)
 
-// 打开图片预览
-const openImagePreview = (index) => {
-  previewImageIndex.value = index
-  showImagePreview.value = true
+// 点赞状态
+const isLiked = ref(false)
+const likeCount = ref(0)
+
+// 检查点赞状态
+const checkLikeStatus = async () => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/like-status`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    if (response.ok) {
+      const data = await response.json()
+      isLiked.value = data.isLiked
+      likeCount.value = data.likeCount || 0
+    }
+  } catch (error) {
+    console.error('获取点赞状态失败:', error)
+  }
 }
 
-// 关闭图片预览
-const closeImagePreview = () => {
-  showImagePreview.value = false
+// 切换点赞状态
+const toggleLike = async () => {
+  if (!localStorage.getItem('token')) {
+    alert('请先登录')
+    return
+  }
+
+  try {
+    const method = isLiked.value ? 'DELETE' : 'POST'
+    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/like`, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      isLiked.value = !isLiked.value
+      likeCount.value = data.likeCount
+      // 更新父组件中的点赞数
+      emit('update-like-count', data.likeCount)
+    }
+  } catch (error) {
+    console.error('点赞操作失败:', error)
+    alert('操作失败，请稍后重试')
+  }
 }
+
+// 监听 show 属性变化
+watch(() => props.show, async (newVal) => {
+  if (newVal) {
+    await checkLikeStatus()
+  }
+})
+
+// 监听 postDetail 变化
+watch(() => props.postDetail, async (newVal) => {
+  if (newVal) {
+    // 当文章详情变化时，重新获取点赞状态
+    await checkLikeStatus()
+  }
+}, { immediate: true })
 
 const {
-  currentImageIndex,
   commentContent,
   comments,
   isLoading,
@@ -162,9 +219,15 @@ const {
   prevSlide,
   nextSlide,
   goToSlide,
-  toggleLike,
-  submitComment
+  showImagePreview,
+  closeImagePreview,
+  submitComment: submitCommentToServer
 } = usePostDetail(props, emit)
+
+// 在获取文章详情后检查点赞状态
+onMounted(async () => {
+  await checkLikeStatus()
+})
 </script>
 
 <style scoped>

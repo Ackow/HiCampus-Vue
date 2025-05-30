@@ -30,7 +30,13 @@
               <span class="username">{{ article.creator.nickname }}</span>
             </div>
             <div class="interaction-info">
-              <span class="likes"><img src="/assets/images/爱心.svg" alt="点赞" class="btn-icon"> {{ article.likeCount || 0 }}</span>
+              <span class="likes">
+                <img :src="article.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+                     :alt="article.isLiked ? '已点赞' : '未点赞'" 
+                     class="btn-icon"
+                     :class="{ 'liked': article.isLiked }"> 
+                {{ article.likeCount || 0 }}
+              </span>
               <span class="comments"><img src="/assets/images/评论.svg" alt="评论" class="btn-icon"> {{ article.commentCount || 0 }}</span>
             </div>
           </div>
@@ -47,12 +53,13 @@
       :post-detail="currentPost"
       @close="closePostDetail"
       @toggle-like="toggleLike"
+      @update-like-count="updateLikeCount"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useArticleList } from '../scripts/ArticleList.js';
 import PostDetail from '../views/PostDetail.vue';
 import '../styles/articleList.css';
@@ -66,10 +73,12 @@ const categories = [
   { label: '校园生活', value: '#校园生活' },
   { label: '学习交流', value: '#学习交流' },
   { label: '社团活动', value: '#社团活动' },
-  { label: '校园美食', value: '#校园美食' },
+  { label: '美食', value: '#美食' },
   { label: '校园风景', value: '#校园风景' },
-  { label: '校园趣事', value: '#校园趣事' },
-  { label: '游戏', value: '#游戏' }
+  { label: '吐槽区', value: '#吐槽区' },
+  { label: '游戏交流', value: '#游戏交流' },
+  { label: '二手闲置', value: '#二手闲置' },
+  { label: '竞赛分享', value: '#竞赛分享' }
 ];
 
 const {
@@ -79,7 +88,8 @@ const {
   getArticleImage,
   getAvatarUrl,
   handleImageError,
-  handleAvatarError
+  handleAvatarError,
+  checkArticlesLikeStatus
 } = useArticleList();
 
 const filteredArticles = computed(() => {
@@ -96,7 +106,6 @@ const handleCategoryChange = (category) => {
 };
 
 const openPostDetail = (article) => {
-  console.log('Opening post detail:', article); // 添加调试日志
   currentPost.value = {
     id: article._id,
     username: article.creator.nickname,
@@ -105,15 +114,12 @@ const openPostDetail = (article) => {
     description: article.content,
     images: article.images ? article.images.map(img => `http://localhost:3000/uploads/images/${img}`) : [],
     likes: article.likeCount || 0,
-    isLiked: false,
     comments: article.comments || []
   };
   showPostDetail.value = true;
-  console.log('Post detail state:', { showPostDetail: showPostDetail.value, currentPost: currentPost.value }); // 添加调试日志
 };
 
 const closePostDetail = () => {
-  console.log('Closing post detail'); // 添加调试日志
   showPostDetail.value = false;
   currentPost.value = null;
 };
@@ -125,7 +131,19 @@ const toggleLike = () => {
   }
 };
 
-// 确保组件挂载后数据已经加载
+const updateLikeCount = (newCount) => {
+  if (currentPost.value) {
+    currentPost.value.likes = newCount;
+  }
+};
+
+// 监听文章列表变化
+watch(() => articles.value, async (newArticles) => {
+  if (newArticles && newArticles.length > 0) {
+    await checkArticlesLikeStatus();
+  }
+}, { immediate: true });
+
 onMounted(() => {
   console.log('ArticleList mounted, articles:', articles.value);
 });

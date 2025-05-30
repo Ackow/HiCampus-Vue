@@ -322,6 +322,34 @@ html {
     color: #ff4757;
 }
 
+.likes-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.likes-count:hover {
+    transform: scale(1.05);
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    transition: all 0.3s ease;
+}
+
+.btn-icon.liked {
+    transform: scale(1.1);
+}
+
+.likes-number {
+    font-size: 0.9rem;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
 /* Responsive Design */
 @media (max-width: 48rem) {
     .post-detail-card-standalone {

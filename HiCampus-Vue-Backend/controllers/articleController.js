@@ -388,6 +388,90 @@ const getUserLikes = async (req, res) => {
     }
 };
 
+// 点赞文章
+const likeArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        // 检查是否已经点赞
+        if (article.likedBy.includes(userId)) {
+            return res.status(400).json({ message: '已经点赞过了' });
+        }
+
+        // 添加点赞
+        article.likedBy.push(userId);
+        article.likeCount += 1;
+        await article.save();
+
+        res.json({ 
+            message: '点赞成功',
+            likeCount: article.likeCount
+        });
+    } catch (error) {
+        console.error('点赞失败:', error);
+        res.status(500).json({ message: '点赞失败' });
+    }
+};
+
+// 取消点赞
+const unlikeArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        // 检查是否已经点赞
+        if (!article.likedBy.includes(userId)) {
+            return res.status(400).json({ message: '还没有点赞' });
+        }
+
+        // 取消点赞
+        article.likedBy = article.likedBy.filter(id => id.toString() !== userId);
+        article.likeCount = Math.max(0, article.likeCount - 1);
+        await article.save();
+
+        res.json({ 
+            message: '取消点赞成功',
+            likeCount: article.likeCount
+        });
+    } catch (error) {
+        console.error('取消点赞失败:', error);
+        res.status(500).json({ message: '取消点赞失败' });
+    }
+};
+
+// 获取点赞状态
+const getLikeStatus = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        const isLiked = article.likedBy.includes(userId);
+        res.json({ 
+            isLiked,
+            likeCount: article.likeCount || 0
+        });
+    } catch (error) {
+        console.error('获取点赞状态失败:', error);
+        res.status(500).json({ message: '获取点赞状态失败' });
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
@@ -397,5 +481,8 @@ module.exports = {
     addComment,
     getUserArticles,
     getUserFavorites,
-    getUserLikes
+    getUserLikes,
+    likeArticle,
+    unlikeArticle,
+    getLikeStatus
 }; 

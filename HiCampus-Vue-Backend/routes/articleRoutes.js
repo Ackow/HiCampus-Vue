@@ -30,4 +30,13 @@ router.get('/articles/:articleId/comments', articleController.getArticleComments
 // 添加评论
 router.post('/articles/:articleId/comments', authenticateToken, articleController.addComment);
 
+// 点赞文章
+router.post('/articles/:articleId/like', authenticateToken, articleController.likeArticle);
+
+// 取消点赞
+router.delete('/articles/:articleId/like', authenticateToken, articleController.unlikeArticle);
+
+// 获取文章点赞状态
+router.get('/articles/:articleId/like-status', authenticateToken, articleController.getLikeStatus);
+
 module.exports = router;
