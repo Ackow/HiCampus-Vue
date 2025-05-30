@@ -104,24 +104,56 @@ export function useProfileData() {
 
   const fetchUserFavorites = async () => {
     try {
+      console.log('开始获取收藏文章...');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('未找到登录token');
+        favorites.value = [];
+        return;
+      }
+
       const response = await fetch('http://localhost:3000/api/articles/favorites', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
+
+      console.log('收藏文章API响应状态:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        console.log('获取到的收藏文章数据:', data);
-        favorites.value = data.articles.map(article => ({
-          ...article,
-          isCollected: true,
-          images: article.images || []
-        }));
-        console.log('处理后的收藏文章数据:', favorites.value);
+        console.log('获取到的收藏文章原始数据:', data);
+        
+        if (data.articles && Array.isArray(data.articles)) {
+          favorites.value = data.articles.map(article => {
+            console.log('处理文章数据:', article);
+            return {
+              ...article,
+              isCollected: true,
+              images: article.images || [],
+              likeCount: article.likeCount || 0,
+              collectCount: article.collectCount || 0,
+              commentCount: article.commentCount || 0,
+              creator: article.creator ? {
+                ...article.creator,
+                avatar: article.creator.avatar ? article.creator.avatar : 'default-avatar.jpg'
+              } : null
+            };
+          });
+          console.log('处理后的收藏文章列表:', favorites.value);
+        } else {
+          console.error('收藏文章数据格式错误:', data);
+          favorites.value = [];
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('获取收藏文章失败:', response.status, errorData);
+        favorites.value = [];
       }
     } catch (error) {
       console.error('获取收藏文章失败:', error);
       error.value = '获取收藏文章失败';
+      favorites.value = [];
     }
   };
 
@@ -162,6 +194,9 @@ export function useProfileData() {
     error,
     initData,
     handleTabChange,
-    fetchUserInfo
+    fetchUserInfo,
+    fetchUserFavorites,
+    fetchUserNotes,
+    fetchUserLikes
   };
 }

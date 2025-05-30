@@ -350,6 +350,10 @@ const getUserFavorites = async (req, res) => {
                 }
             });
 
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
         // 获取每篇文章的图片
         const articlesWithImages = await Promise.all(user.favorites.map(async (article) => {
             const images = await Image.find({ article: article._id });
@@ -361,10 +365,12 @@ const getUserFavorites = async (req, res) => {
                     avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
                 } : null,
                 isLiked: article.likedBy.includes(req.user.userId),
-                isCollected: true
+                isCollected: true,
+                collectCount: article.collectCount || 0
             };
         }));
 
+        console.log('获取到的收藏文章数量:', articlesWithImages.length);
         res.json({ articles: articlesWithImages });
     } catch (err) {
         console.error('获取用户收藏错误:', err);
@@ -520,6 +526,11 @@ const collectArticle = async (req, res) => {
         article.collectCount += 1;
         await article.save();
 
+        // 同步更新用户数据库中的收藏列表
+        await User.findByIdAndUpdate(userId, {
+            $addToSet: { favorites: articleId }
+        });
+
         res.json({ 
             message: '收藏成功',
             collectCount: article.collectCount
@@ -550,6 +561,11 @@ const uncollectArticle = async (req, res) => {
         article.collectedBy = article.collectedBy.filter(id => id.toString() !== userId);
         article.collectCount = Math.max(0, article.collectCount - 1);
         await article.save();
+
+        // 同步更新用户数据库中的收藏列表
+        await User.findByIdAndUpdate(userId, {
+            $pull: { favorites: articleId }
+        });
 
         res.json({ 
             message: '取消收藏成功',

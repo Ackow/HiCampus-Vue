@@ -124,8 +124,11 @@ const openPostDetail = (article) => {
     title: article.title,
     description: article.content,
     images: article.images ? article.images.map(img => `http://localhost:3000/uploads/images/${img}`) : [],
-    likes: article.likeCount || 0,
-    comments: article.comments || []
+    likeCount: article.likeCount || 0,
+    collectCount: article.collectCount || 0,
+    commentCount: article.commentCount || 0,
+    isLiked: article.isLiked || false,
+    isCollected: article.isCollected || false
   };
   showPostDetail.value = true;
 };

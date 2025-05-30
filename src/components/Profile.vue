@@ -82,7 +82,7 @@
 
 <script setup>
 import { useProfileData } from '../utils/useProfileData.js'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAuth } from '../utils/useAuth.js'
 import { useRouter } from 'vue-router'
 import PostDetail from '../views/PostDetail.vue'
@@ -99,7 +99,8 @@ const {
   isLoading,
   error,
   initData,
-  handleTabChange
+  handleTabChange,
+  fetchUserFavorites
 } = useProfileData()
 
 // PostDetail 相关状态
@@ -159,12 +160,17 @@ const showPostDetail = (post) => {
     return `http://localhost:3000/uploads/images/${img}`;
   }) : [];
 
+  // 处理头像数据
+  const avatarUrl = post.creator.avatar 
+    ? `http://localhost:3000/uploads/avatars/${post.creator.avatar}`
+    : 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
+
   selectedPost.value = {
     id: post._id,
     title: post.title,
     description: post.content,
     username: post.creator.nickname,
-    avatar: post.creator.avatar ? `http://localhost:3000/uploads/avatars/${post.creator.avatar}` : 'http://localhost:3000/uploads/avatars/default-avatar.jpg',
+    avatar: avatarUrl,
     images: processedImages,
     likeCount: post.likeCount || 0,
     collectCount: post.collectCount || 0,
@@ -173,7 +179,7 @@ const showPostDetail = (post) => {
     isLiked: post.isLiked || false,
     isCollected: post.isCollected || false
   }
-  // console.log('处理后的文章详情数据:', selectedPost.value);
+  console.log('处理后的文章详情数据:', selectedPost.value);
   showDetail.value = true;
 }
 
@@ -208,7 +214,7 @@ const handleLikeUpdate = (data) => {
 
 // 处理收藏更新
 const handleCollectUpdate = (data) => {
-  // console.log('收到收藏更新:', data);
+  console.log('收到收藏更新:', data);
   const { articleId, collectCount, isCollected } = data;
   
   // 更新所有相关列表中的文章数据
@@ -217,9 +223,33 @@ const handleCollectUpdate = (data) => {
     if (article) {
       article.collectCount = collectCount;
       article.isCollected = isCollected;
+      
+      // 如果是取消收藏，从收藏列表中移除
+      if (!isCollected && list === favorites.value) {
+        const index = favorites.value.findIndex(item => item._id === articleId);
+        if (index !== -1) {
+          console.log('从收藏列表中移除文章:', articleId);
+          favorites.value.splice(index, 1);
+        }
+      }
     }
   });
+
+  // 如果当前在收藏标签页，重新获取收藏列表
+  if (activeTab.value === 'favorites') {
+    console.log('当前在收藏标签页，重新获取收藏列表');
+    fetchUserFavorites();
+  }
 }
+
+// 监听标签页变化
+watch(activeTab, (newTab) => {
+  console.log('标签页切换到:', newTab);
+  if (newTab === 'favorites') {
+    console.log('切换到收藏标签页，重新获取收藏列表');
+    fetchUserFavorites();
+  }
+});
 
 onMounted(() => {
   console.log('Profile组件挂载');

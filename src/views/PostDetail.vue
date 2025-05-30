@@ -69,7 +69,7 @@
                     </div>
                   </div>
                 </div>
-                <span v-else>暂无评论</span>
+                <span class="no-comment" v-else>暂无评论</span>
               </div>
             </div>
           </div>
@@ -127,6 +127,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { usePostDetail } from '../scripts/postDetail'
 import ImagePreview from '../components/ImagePreview.vue'
+import { useAuth } from '../utils/useAuth'
 
 const props = defineProps({
   show: {
@@ -159,6 +160,8 @@ const likeCount = ref(0)
 const isCollected = ref(false)
 const collectCount = ref(0)
 
+const auth = useAuth()
+
 const {
   currentImageIndex,
   commentContent,
@@ -183,126 +186,219 @@ const closeImagePreview = () => {
   showImagePreview.value = false
 }
 
-// 检查点赞状态
 const checkLikeStatus = async () => {
-  try {
-    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/like-status`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-    if (response.ok) {
-      const data = await response.json()
-      isLiked.value = data.isLiked
-      likeCount.value = data.likeCount || 0
-    }
-  } catch (error) {
-    console.error('获取点赞状态失败:', error)
-  }
-}
-
-// 切换点赞状态
-const toggleLike = async () => {
-  if (!localStorage.getItem('token')) {
-    alert('请先登录')
+  if (!isLoggedIn()) {
+    console.log('用户未登录，使用初始点赞数据')
+    isLiked.value = false
     return
   }
 
   try {
-    const method = isLiked.value ? 'DELETE' : 'POST'
-    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/like`, {
-      method,
+    const url = `http://localhost:3000/api/articles/${props.postDetail.id}/like-status`
+    console.log('检查点赞状态:', url)
+
+    const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
       }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      isLiked.value = !isLiked.value
-      likeCount.value = data.likeCount
-      // 更新父组件中的点赞数
-      emit('update-like-count', data.likeCount)
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || '获取点赞状态失败')
     }
+
+    const data = await response.json()
+    console.log('获取到的点赞状态:', data)
+
+    isLiked.value = data.isLiked
+    likeCount.value = data.likeCount
   } catch (error) {
-    console.error('点赞操作失败:', error)
-    alert('操作失败，请稍后重试')
+    console.error('检查点赞状态失败:', error)
+    // 保持当前状态不变
   }
+}
+
+// 检查是否已登录
+const isLoggedIn = () => {
+  return !!localStorage.getItem('token')
 }
 
 // 检查收藏状态
 const checkCollectStatus = async () => {
+  if (!isLoggedIn()) {
+    console.log('用户未登录，使用初始收藏数据')
+    isCollected.value = false
+    return
+  }
+
   try {
-    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/collect-status`, {
+    const url = `http://localhost:3000/api/articles/${props.postDetail.id}/collect-status`
+    console.log('检查收藏状态:', url)
+
+    const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
       }
     })
-    if (response.ok) {
-      const data = await response.json()
-      isCollected.value = data.isCollected
-      collectCount.value = data.collectCount || 0
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || '获取收藏状态失败')
     }
+
+    const data = await response.json()
+    console.log('获取到的收藏状态:', data)
+
+    isCollected.value = data.isCollected
+    collectCount.value = data.collectCount
   } catch (error) {
-    console.error('获取收藏状态失败:', error)
+    console.error('检查收藏状态失败:', error)
+    // 保持当前状态不变
   }
 }
 
 // 切换收藏状态
 const toggleCollect = async () => {
-  if (!localStorage.getItem('token')) {
+  if (!isLoggedIn()) {
     alert('请先登录')
     return
   }
 
   try {
     const method = isCollected.value ? 'DELETE' : 'POST'
-    const response = await fetch(`http://localhost:3000/api/articles/${props.postDetail.id}/collect`, {
+    const url = `http://localhost:3000/api/articles/${props.postDetail.id}/collect`
+    console.log('发送收藏请求:', { method, url, currentState: isCollected.value })
+
+    const response = await fetch(url, {
       method,
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
       }
     })
 
-    if (response.ok) {
-      const data = await response.json()
-      isCollected.value = !isCollected.value
-      collectCount.value = data.collectCount
-      // 更新父组件中的收藏数
-      emit('updateCollectCount', {
-        articleId: props.postDetail.id,
-        collectCount: data.collectCount,
-        isCollected: isCollected.value
-      })
+    const data = await response.json()
+    console.log('收藏操作响应:', data)
+
+    if (!response.ok) {
+      throw new Error(data.message || '收藏操作失败')
     }
+
+    // 更新状态
+    isCollected.value = !isCollected.value
+    collectCount.value = data.collectCount
+
+    // 更新父组件中的收藏数
+    emit('updateCollectCount', {
+      articleId: props.postDetail.id,
+      collectCount: data.collectCount,
+      isCollected: isCollected.value
+    })
   } catch (error) {
     console.error('收藏操作失败:', error)
-    alert('操作失败，请稍后重试')
+    // 如果是因为已经收藏/取消收藏导致的错误，重新获取状态
+    if (error.message.includes('已经收藏过了') || error.message.includes('还没有收藏')) {
+      await checkCollectStatus()
+    } else {
+      alert(error.message || '操作失败，请稍后重试')
+    }
   }
 }
 
-// 监听 show 属性变化
-watch(() => props.show, async (newVal) => {
-  if (newVal) {
-    await checkLikeStatus()
-    await checkCollectStatus()
-  }
-})
+// 初始化点赞和收藏数据
+const initLikeAndCollectData = () => {
+  console.log('初始化点赞和收藏数据:', props.postDetail)
+  // 使用传入的数据初始化
+  likeCount.value = props.postDetail.likeCount || 0
+  collectCount.value = props.postDetail.collectCount || 0
+  isLiked.value = props.postDetail.isLiked || false
+  isCollected.value = props.postDetail.isCollected || false
+  
+  console.log('初始化后的数据:', {
+    likeCount: likeCount.value,
+    collectCount: collectCount.value,
+    isLiked: isLiked.value,
+    isCollected: isCollected.value
+  })
+}
 
-// 监听 postDetail 变化
-watch(() => props.postDetail, async (newVal) => {
+// 监听文章详情变化
+watch(() => props.postDetail, (newVal) => {
   if (newVal) {
-    // 当文章详情变化时，重新获取点赞和收藏状态
-    await checkLikeStatus()
-    await checkCollectStatus()
+    console.log('文章详情更新:', newVal)
+    // 先初始化数据
+    initLikeAndCollectData()
+    
+    // 只有在用户登录的情况下才检查状态
+    if (isLoggedIn()) {
+      console.log('用户已登录，检查最新状态')
+      checkLikeStatus()
+      checkCollectStatus()
+    } else {
+      console.log('用户未登录，使用初始数据')
+    }
   }
 }, { immediate: true })
 
-// 在获取文章详情后检查点赞状态
-onMounted(async () => {
-  await checkLikeStatus()
-  await checkCollectStatus()
+// 监听登录状态变化
+watch(() => localStorage.getItem('token'), (newToken) => {
+  if (newToken && props.postDetail) {
+    console.log('用户登录状态变化，重新检查状态')
+    checkLikeStatus()
+    checkCollectStatus()
+  }
 })
+
+// 切换点赞状态
+const toggleLike = async () => {
+  if (!isLoggedIn()) {
+    alert('请先登录')
+    return
+  }
+
+  try {
+    const method = isLiked.value ? 'DELETE' : 'POST'
+    const url = `http://localhost:3000/api/articles/${props.postDetail.id}/like`
+    console.log('发送点赞请求:', { method, url, currentState: isLiked.value })
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    const data = await response.json()
+    console.log('点赞操作响应:', data)
+
+    if (!response.ok) {
+      throw new Error(data.message || '点赞操作失败')
+    }
+
+    // 更新状态
+    isLiked.value = !isLiked.value
+    likeCount.value = data.likeCount
+
+    // 更新父组件中的点赞数
+    emit('update-like-count', {
+      articleId: props.postDetail.id,
+      likeCount: data.likeCount,
+      isLiked: isLiked.value
+    })
+  } catch (error) {
+    console.error('点赞操作失败:', error)
+    // 如果是因为已经点赞/取消点赞导致的错误，重新获取状态
+    if (error.message.includes('已经点赞过了') || error.message.includes('还没有点赞')) {
+      await checkLikeStatus()
+    } else {
+      alert(error.message || '操作失败，请稍后重试')
+    }
+  }
+}
 </script>
 
 <style scoped>
