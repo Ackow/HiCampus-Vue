@@ -10,8 +10,32 @@ export function usePostDetail(props, emit) {
   const commentContent = ref('')
   const comments = ref([])
   const isLoading = ref(false)
+  const isDeleting = ref(false)
+  const showDeleteConfirm = ref(false)
+  const showDeleteCommentConfirm = ref(null)
+  const commentToDelete = ref(null)
+  const isAuthor = ref(false)
+  const isAdmin = ref(false)
+  const isLiked = ref(false)
+  const likeCount = ref(0)
+  const isCollected = ref(false)
+  const collectCount = ref(0)
+  const previewImageIndex = ref(0)
+  const showImagePreview = ref(false)
 
-  // 方法定义
+  // 检查权限
+  const checkPermission = () => {
+    const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    isAuthor.value = currentUser.id === props.postDetail.creatorId
+    isAdmin.value = currentUser.role === 'admin'
+  }
+
+  // 检查是否已登录
+  const isLoggedIn = () => {
+    return !!localStorage.getItem('token')
+  }
+
+  // 加载评论
   const loadComments = async () => {
     if (!props.postDetail?.id) {
       console.error('文章ID不存在:', props.postDetail)
@@ -31,14 +55,17 @@ export function usePostDetail(props, emit) {
     }
   }
 
+  // 关闭详情
   const closeDetail = () => {
     emit('close')
   }
 
+  // 处理头像加载错误
   const handleAvatarError = (e) => {
     e.target.src = 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
   }
 
+  // 图片导航
   const prevSlide = () => {
     if (currentImageIndex.value > 0) {
       currentImageIndex.value--
@@ -55,10 +82,127 @@ export function usePostDetail(props, emit) {
     currentImageIndex.value = index
   }
 
-  const toggleLike = () => {
-    emit('toggle-like')
+  // 图片预览
+  const openImagePreview = (index) => {
+    previewImageIndex.value = index
+    showImagePreview.value = true
   }
 
+  const closeImagePreview = () => {
+    showImagePreview.value = false
+  }
+
+  // 点赞相关
+  const checkLikeStatus = async () => {
+    if (!isLoggedIn()) {
+      console.log('用户未登录，使用初始点赞数据')
+      isLiked.value = false
+      return
+    }
+
+    try {
+      const response = await axios.get(`/api/articles/${props.postDetail.id}/like-status`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      isLiked.value = response.data.isLiked
+      likeCount.value = response.data.likeCount
+    } catch (error) {
+      console.error('检查点赞状态失败:', error)
+    }
+  }
+
+  const toggleLike = async () => {
+    if (!isLoggedIn()) {
+      alert('请先登录')
+      return
+    }
+
+    try {
+      const method = isLiked.value ? 'delete' : 'post'
+      const response = await axios[method](`/api/articles/${props.postDetail.id}/like`, {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      isLiked.value = !isLiked.value
+      likeCount.value = response.data.likeCount
+
+      emit('update-like-count', {
+        articleId: props.postDetail.id,
+        likeCount: response.data.likeCount,
+        isLiked: isLiked.value
+      })
+    } catch (error) {
+      console.error('点赞操作失败:', error)
+      if (error.response?.data?.message?.includes('已经点赞过了') || 
+          error.response?.data?.message?.includes('还没有点赞')) {
+        await checkLikeStatus()
+      } else {
+        alert(error.response?.data?.message || '操作失败，请稍后重试')
+      }
+    }
+  }
+
+  // 收藏相关
+  const checkCollectStatus = async () => {
+    if (!isLoggedIn()) {
+      console.log('用户未登录，使用初始收藏数据')
+      isCollected.value = false
+      return
+    }
+
+    try {
+      const response = await axios.get(`/api/articles/${props.postDetail.id}/collect-status`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      isCollected.value = response.data.isCollected
+      collectCount.value = response.data.collectCount
+    } catch (error) {
+      console.error('检查收藏状态失败:', error)
+    }
+  }
+
+  const toggleCollect = async () => {
+    if (!isLoggedIn()) {
+      alert('请先登录')
+      return
+    }
+
+    try {
+      const method = isCollected.value ? 'delete' : 'post'
+      const response = await axios[method](`/api/articles/${props.postDetail.id}/collect`, {}, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      isCollected.value = !isCollected.value
+      collectCount.value = response.data.collectCount
+
+      emit('updateCollectCount', {
+        articleId: props.postDetail.id,
+        collectCount: response.data.collectCount,
+        isCollected: isCollected.value
+      })
+    } catch (error) {
+      console.error('收藏操作失败:', error)
+      if (error.response?.data?.message?.includes('已经收藏过了') || 
+          error.response?.data?.message?.includes('还没有收藏')) {
+        await checkCollectStatus()
+      } else {
+        alert(error.response?.data?.message || '操作失败，请稍后重试')
+      }
+    }
+  }
+
+  // 评论相关
   const submitComment = async () => {
     if (!commentContent.value.trim() || isLoading.value) return
     if (!props.postDetail?.id) {
@@ -69,7 +213,6 @@ export function usePostDetail(props, emit) {
     
     isLoading.value = true
     try {
-      console.log('发送评论，文章ID:', props.postDetail.id)
       const response = await axios.post(`/api/articles/${props.postDetail.id}/comments`, {
         content: commentContent.value
       }, {
@@ -78,18 +221,13 @@ export function usePostDetail(props, emit) {
         }
       })
       
-      // 添加新评论到列表
       comments.value.unshift(response.data)
-      // 更新评论数
       props.postDetail.commentCount = (props.postDetail.commentCount || 0) + 1
-      // 清空输入框
       commentContent.value = ''
-      // 通知父组件评论已添加
       emit('comment-added', response.data)
     } catch (error) {
       console.error('发送评论失败:', error)
       if (error.response?.status === 401) {
-        // 未登录或 token 过期
         alert('请先登录后再评论')
       } else {
         alert('评论发送失败，请稍后重试')
@@ -99,32 +237,112 @@ export function usePostDetail(props, emit) {
     }
   }
 
-  // 监听 show 属性变化
+  // 删除相关
+  const handleDelete = async () => {
+    if (isDeleting.value) return
+    
+    try {
+      isDeleting.value = true
+      await axios.delete(`/api/articles/${props.postDetail.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      showDeleteConfirm.value = false
+      closeDetail()
+      window.location.reload()
+    } catch (error) {
+      console.error('删除文章失败:', error)
+      alert('删除失败，请重试')
+    } finally {
+      isDeleting.value = false
+    }
+  }
+
+  const isCommentAuthor = (comment) => {
+    const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    return currentUser.id === comment.commenter._id
+  }
+
+  const showDeleteCommentConfirmDialog = (comment) => {
+    commentToDelete.value = comment
+    showDeleteCommentConfirm.value = true
+  }
+
+  const handleDeleteComment = async () => {
+    if (isDeleting.value || !commentToDelete.value) return
+    
+    try {
+      isDeleting.value = true
+      await axios.delete(`/api/articles/${props.postDetail.id}/comments/${commentToDelete.value._id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      const index = comments.value.findIndex(c => c._id === commentToDelete.value._id)
+      if (index !== -1) {
+        comments.value.splice(index, 1)
+      }
+
+      showDeleteCommentConfirm.value = null
+      commentToDelete.value = null
+    } catch (error) {
+      console.error('删除评论失败:', error)
+      alert('删除失败，请重试')
+    } finally {
+      isDeleting.value = false
+    }
+  }
+
+  // 初始化数据
+  const initLikeAndCollectData = () => {
+    likeCount.value = props.postDetail.likeCount || 0
+    collectCount.value = props.postDetail.collectCount || 0
+    isLiked.value = props.postDetail.isLiked || false
+    isCollected.value = props.postDetail.isCollected || false
+  }
+
+  // 监听器
   watch(() => props.show, (newVal) => {
     if (newVal) {
       document.body.style.overflow = 'hidden'
-      // 重置评论列表和图片索引
       comments.value = []
       currentImageIndex.value = 0
-      // 重新加载评论
       loadComments()
     } else {
       document.body.style.overflow = ''
     }
   }, { immediate: true })
 
-  // 监听 postDetail 变化
   watch(() => props.postDetail, (newVal) => {
-    // console.log('postDetail changed:', newVal)
-    // 当 postDetail 变化时，如果当前是显示状态，重新加载评论
-    if (props.show) {
-      loadComments()
+    if (newVal) {
+      initLikeAndCollectData()
+      
+      if (isLoggedIn()) {
+        checkLikeStatus()
+        checkCollectStatus()
+      }
+
+      checkPermission()
+      
+      if (props.show) {
+        loadComments()
+      }
     }
   }, { immediate: true })
 
-  // 组件挂载和卸载
+  watch(() => localStorage.getItem('token'), (newToken) => {
+    if (newToken && props.postDetail) {
+      checkLikeStatus()
+      checkCollectStatus()
+    }
+  })
+
+  // 生命周期钩子
   onMounted(() => {
-    console.log('PostDetail mounted, postDetail')
+    console.log('PostDetail mounted')
   })
 
   onBeforeUnmount(() => {
@@ -132,16 +350,43 @@ export function usePostDetail(props, emit) {
   })
 
   return {
+    // 状态
     currentImageIndex,
     commentContent,
     comments,
     isLoading,
+    isDeleting,
+    showDeleteConfirm,
+    showDeleteCommentConfirm,
+    commentToDelete,
+    isAuthor,
+    isAdmin,
+    isLiked,
+    likeCount,
+    isCollected,
+    collectCount,
+    previewImageIndex,
+    showImagePreview,
+
+    // 方法
+    checkPermission,
+    isLoggedIn,
+    loadComments,
     closeDetail,
     handleAvatarError,
     prevSlide,
     nextSlide,
     goToSlide,
+    openImagePreview,
+    closeImagePreview,
+    checkLikeStatus,
     toggleLike,
-    submitComment
+    checkCollectStatus,
+    toggleCollect,
+    submitComment,
+    handleDelete,
+    isCommentAuthor,
+    showDeleteCommentConfirmDialog,
+    handleDeleteComment
   }
 } 

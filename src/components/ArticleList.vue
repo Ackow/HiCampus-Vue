@@ -12,7 +12,7 @@
     </div>
 
     <div class="content-grid">
-      <div v-for="article in filteredArticles" :key="article._id" class="content-card" @click.stop="openPostDetail(article)">
+      <div v-for="article in filteredArticles" :key="article._id" class="content-card" @click="openPostDetail(article)">
         <div class="card-image">
           <img :src="getArticleImage(article)" 
                alt="内容图片"
@@ -23,11 +23,11 @@
           <p class="card-description">{{ article.content }}</p>
           <div class="card-footer">
             <div class="user-info">
-              <img :src="getAvatarUrl(article.creator)" 
+              <img :src="getUserDisplayInfo(article).avatar" 
                    alt="用户头像" 
                    class="user-avatar-small"
                    @error="handleAvatarError">
-              <span class="username">{{ article.creator.nickname }}</span>
+              <span class="username">{{ getUserDisplayInfo(article).nickname }}</span>
             </div>
             <div class="interaction-info">
               <span class="likes">
@@ -75,25 +75,61 @@ const categories = [
   { label: '校园生活', value: '#校园生活' },
   { label: '学习交流', value: '#学习交流' },
   { label: '社团活动', value: '#社团活动' },
-  { label: '美食', value: '#美食' },
-  { label: '校园风景', value: '#校园风景' },
+  // { label: '美食', value: '#美食' },
+  // { label: '校园风景', value: '#校园风景' },
   { label: '吐槽区', value: '#吐槽区' },
   { label: '游戏交流', value: '#游戏交流' },
   { label: '二手闲置', value: '#二手闲置' },
   { label: '竞赛分享', value: '#竞赛分享' }
 ];
 
+// 添加随机昵称生成函数
+const generateRandomNickname = () => {
+  const adjectives = ['快乐的', '机智的', '可爱的', '神秘的', '活泼的', '安静的', '聪明的', '善良的'];
+  const nouns = ['小兔子', '小猫咪', '小狗狗', '小熊猫', '小松鼠', '小仓鼠', '小浣熊', '小狐狸'];
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  return randomAdjective + randomNoun;
+};
+
+// 获取用户显示信息
+const getUserDisplayInfo = (article) => {
+  if (article.topics && article.topics.includes('#吐槽区')) {
+    return {
+      nickname: generateRandomNickname(),
+      avatar: 'http://localhost:3000/uploads/avatars/default-avatar.png'
+    };
+  }
+  return {
+    nickname: article.creator.nickname,
+    avatar: getAvatarUrl(article.creator)
+  };
+};
+
 const {
   articles,
   isLoading,
   error,
-  getArticleImage,
   getAvatarUrl,
   handleImageError,
   handleAvatarError,
   checkArticlesLikeStatus,
   searchArticles
 } = useArticleList();
+
+// 获取文章图片
+const getArticleImage = (article) => {
+  if (article.images && article.images.length > 0) {
+    const imagePath = article.images[0];
+    // 如果已经是完整URL，直接返回
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // 如果是相对路径，添加服务器地址
+    return `http://localhost:3000/uploads/images/${imagePath}`;
+  }
+  return null;
+};
 
 // 添加 handleSearch 函数
 const handleSearch = async (keyword) => {
@@ -117,10 +153,11 @@ const handleCategoryChange = (category) => {
 };
 
 const openPostDetail = (article) => {
+  const userInfo = getUserDisplayInfo(article);
   currentPost.value = {
     id: article._id,
-    username: article.creator.nickname,
-    avatar: getAvatarUrl(article.creator),
+    username: userInfo.nickname,
+    avatar: userInfo.avatar,
     title: article.title,
     description: article.content,
     images: article.images ? article.images.map(img => `http://localhost:3000/uploads/images/${img}`) : [],
@@ -128,7 +165,9 @@ const openPostDetail = (article) => {
     collectCount: article.collectCount || 0,
     commentCount: article.commentCount || 0,
     isLiked: article.isLiked || false,
-    isCollected: article.isCollected || false
+    isCollected: article.isCollected || false,
+    topics: article.topics || [],
+    creatorId: article.creator._id
   };
   showPostDetail.value = true;
 };

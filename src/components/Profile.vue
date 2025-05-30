@@ -177,7 +177,8 @@ const showPostDetail = (post) => {
     commentCount: post.commentCount || 0,
     createdAt: post.createdAt,
     isLiked: post.isLiked || false,
-    isCollected: post.isCollected || false
+    isCollected: post.isCollected || false,
+    creatorId: post.creator._id
   }
   console.log('处理后的文章详情数据:', selectedPost.value);
   showDetail.value = true;

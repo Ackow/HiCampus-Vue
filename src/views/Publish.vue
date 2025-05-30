@@ -179,6 +179,103 @@ import { ref } from 'vue'
 
 const imageInput = ref(null)
 
+// 生成随机渐变色
+const generateGradientColors = () => {
+  const colors = [
+    ['#FFE5E5', '#FFD6D6'], // 浅粉色
+    ['#E5F6FF', '#D6F0FF'], // 浅蓝色
+    ['#E5FFE5', '#D6FFD6'], // 浅绿色
+    ['#FFF5E5', '#FFEED6'], // 浅橙色
+    ['#F5E5FF', '#EED6FF'], // 浅紫色
+    ['#E5FFE5', '#D6FFD6'], // 浅青色
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
+// 生成带标题的渐变背景图片
+const generateTitleImage = async (title) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  const ctx = canvas.getContext('2d');
+
+  // 创建渐变背景
+  const [color1, color2] = generateGradientColors();
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, color1);
+  gradient.addColorStop(1, color2);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 添加标题文字
+  ctx.fillStyle = '#333333';
+  ctx.font = 'bold 80px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // 文字换行处理
+  const maxWidth = canvas.width - 80;
+  const words = title.split('');
+  let line = '';
+  let lines = [];
+  let y = canvas.height / 2 - 40;
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line + words[i];
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+
+    if (testWidth > maxWidth && i > 0) {
+      lines.push(line);
+      line = words[i];
+    } else {
+      line = testLine;
+    }
+  }
+  lines.push(line);
+
+  // 绘制文字
+  lines.forEach((line, index) => {
+    ctx.fillText(line, canvas.width / 2, y + (index * 60));
+  });
+
+  // 将canvas转换为Blob
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, 'image/png');
+  });
+};
+
+// 上传图片到服务器
+const uploadImage = async (imageBlob) => {
+  const formData = new FormData();
+  // 生成带时间戳的文件名，不添加后缀
+  const timestamp = new Date().getTime();
+  const filename = `image-${timestamp}-${Math.floor(Math.random() * 1000000000)}`;
+  formData.append('image', imageBlob, filename);
+
+  try {
+    const response = await fetch('http://localhost:3000/api/upload/image', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('图片上传失败');
+    }
+
+    const data = await response.json();
+    return data.filename;
+  } catch (error) {
+    console.error('上传图片失败:', error);
+    throw error;
+  }
+};
+
 const {
   title,
   content,
@@ -206,8 +303,29 @@ const {
   handleTopicSelect,
   addCustomTopic,
   handleClickOutside,
-  handlePublish
+  handlePublish: originalHandlePublish
 } = usePublish()
+
+// 重写发布处理函数
+const handlePublish = async () => {
+  try {
+    // 如果没有上传图片，生成封面图片
+    if (images.value.length === 0) {
+      const coverImageBlob = await generateTitleImage(title.value);
+      // 直接调用原始的发布函数，让它处理图片上传
+      images.value.push({
+        file: coverImageBlob,
+        preview: URL.createObjectURL(coverImageBlob)
+      });
+    }
+    
+    // 调用原始的发布函数
+    await originalHandlePublish();
+  } catch (error) {
+    console.error('发布失败:', error);
+    alert('发布失败，请重试');
+  }
+};
 
 // 处理图片选择
 const onImageSelect = (event) => {

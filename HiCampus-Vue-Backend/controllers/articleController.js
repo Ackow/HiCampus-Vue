@@ -2,6 +2,8 @@ const Article = require('../models/Article');
 const Image = require('../models/Image');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
+const fs = require('fs').promises;
+const path = require('path');
 
 // 获取文章列表
 const getArticles = async (req, res) => {
@@ -307,6 +309,39 @@ const addComment = async (req, res) => {
             message: '添加评论失败',
             error: error.message 
         });
+    }
+};
+
+// 删除评论
+const deleteComment = async (req, res) => {
+    try {
+        const { articleId, commentId } = req.params;
+        const userId = req.user.userId;
+
+        // 查找评论
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: '评论不存在' });
+        }
+
+        // 验证权限（评论作者或管理员可以删除）
+        const user = await User.findById(userId);
+        if (comment.commenter.toString() !== userId && user.role !== 'admin') {
+            return res.status(403).json({ message: '没有权限删除此评论' });
+        }
+
+        // 删除评论
+        await Comment.findByIdAndDelete(commentId);
+
+        // 更新文章的评论数
+        await Article.findByIdAndUpdate(articleId, {
+            $inc: { commentCount: -1 }
+        });
+
+        res.json({ message: '评论删除成功' });
+    } catch (error) {
+        console.error('删除评论失败:', error);
+        res.status(500).json({ message: '删除评论失败' });
     }
 };
 
@@ -658,6 +693,93 @@ const searchArticles = async (req, res) => {
     }
 };
 
+// 删除文章
+const deleteArticle = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const userId = req.user.userId;
+
+        // 查找文章
+        const article = await Article.findById(articleId);
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        // 验证是否是文章作者
+        if (article.creator.toString() !== userId) {
+            return res.status(403).json({ message: '没有权限删除此文章' });
+        }
+
+        // 获取文章相关的图片
+        const images = await Image.find({ article: articleId });
+        
+        // 删除图片文件
+        for (const image of images) {
+            try {
+                const imageUrl = image.imageUrl.split('/').pop();
+                // 尝试删除带后缀的文件
+                const imagePathWithExt = path.resolve(__dirname, '..', 'uploads', 'images', `${imageUrl}.png`);
+                // 尝试删除不带后缀的文件
+                const imagePathWithoutExt = path.resolve(__dirname, '..', 'uploads', 'images', imageUrl);
+                
+                // 删除带后缀的文件
+                try {
+                    await fs.access(imagePathWithExt);
+                    await fs.unlink(imagePathWithExt);
+                    console.log('删除图片文件成功(带后缀):', imagePathWithExt);
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        console.log('图片文件不存在(带后缀):', imagePathWithExt);
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // 删除不带后缀的文件
+                try {
+                    await fs.access(imagePathWithoutExt);
+                    await fs.unlink(imagePathWithoutExt);
+                    console.log('删除图片文件成功(不带后缀):', imagePathWithoutExt);
+                } catch (error) {
+                    if (error.code === 'ENOENT') {
+                        console.log('图片文件不存在(不带后缀):', imagePathWithoutExt);
+                    } else {
+                        throw error;
+                    }
+                }
+            } catch (error) {
+                console.error('删除图片文件失败:', error);
+                // 继续执行，即使删除文件失败
+            }
+        }
+
+        // 删除图片记录
+        await Image.deleteMany({ article: articleId });
+
+        // 删除相关的评论
+        await Comment.deleteMany({ article: articleId });
+
+        // 删除文章
+        await Article.findByIdAndDelete(articleId);
+
+        // 从用户的点赞和收藏列表中移除
+        await User.updateMany(
+            { $or: [{ likes: articleId }, { favorites: articleId }] },
+            { 
+                $pull: { 
+                    likes: articleId,
+                    favorites: articleId
+                }
+            }
+        );
+
+        res.json({ message: '文章删除成功' });
+    } catch (error) {
+        console.error('删除文章失败:', error);
+        res.status(500).json({ message: '删除文章失败' });
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
@@ -665,6 +787,7 @@ module.exports = {
     getMentionedArticles,
     getArticleComments,
     addComment,
+    deleteComment,
     getUserArticles,
     getUserFavorites,
     getUserLikes,
@@ -674,5 +797,6 @@ module.exports = {
     collectArticle,
     uncollectArticle,
     getCollectStatus,
-    searchArticles
+    searchArticles,
+    deleteArticle
 }; 

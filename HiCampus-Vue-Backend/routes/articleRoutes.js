@@ -33,6 +33,9 @@ router.get('/articles/:articleId/comments', articleController.getArticleComments
 // 添加评论
 router.post('/articles/:articleId/comments', authenticateToken, articleController.addComment);
 
+// 删除评论
+router.delete('/articles/:articleId/comments/:commentId', authenticateToken, articleController.deleteComment);
+
 // 点赞文章
 router.post('/articles/:articleId/like', authenticateToken, articleController.likeArticle);
 
@@ -50,5 +53,8 @@ router.delete('/articles/:articleId/collect', authenticateToken, articleControll
 
 // 获取文章收藏状态
 router.get('/articles/:articleId/collect-status', authenticateToken, articleController.getCollectStatus);
+
+// 删除文章
+router.delete('/articles/:articleId', authenticateToken, articleController.deleteArticle);
 
 module.exports = router;

@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema({
         required: [true, '密码不能为空'],
         minlength: [6, '密码长度至少为6个字符']
     },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
     nickname: { 
         type: String, 
         required: [true, '昵称不能为空'],
@@ -78,21 +83,31 @@ const userSchema = new mongoose.Schema({
 
 // 在保存用户之前生成uid
 userSchema.pre('save', async function(next) {
-    if (!this.uid) {
-        const counter = await Counter.findByIdAndUpdate(
-            'userId',
-            { $inc: { seq: 1 } },
-            { new: true, upsert: true }
-        );
-        this.uid = counter.seq.toString().padStart(12, '0');
-    }
-    if (!this.isModified('password')) return next();
-    
     try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
+        console.log('pre save hook 开始执行');
+        // 生成uid
+        if (!this.uid) {
+            console.log('生成新的uid');
+            const counter = await Counter.findByIdAndUpdate(
+                'userId',
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+            this.uid = counter.seq.toString().padStart(12, '0');
+        }
+
+        // 如果密码被修改，重新加密
+        if (this.isModified('password')) {
+            console.log('密码被修改，开始加密');
+            console.log('原始密码:', this.password);
+            const salt = await bcrypt.genSalt(10);
+            this.password = await bcrypt.hash(this.password, salt);
+            console.log('加密后的密码:', this.password);
+        }
+        console.log('pre save hook 执行完成');
         next();
     } catch (error) {
+        console.error('pre save hook 错误:', error);
         next(error);
     }
 });
@@ -104,7 +119,12 @@ userSchema.index({ nickname: 1 });
 
 // 验证密码方法
 userSchema.methods.comparePassword = async function(candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
+    console.log('比较密码:');
+    console.log('输入的密码:', candidatePassword);
+    console.log('存储的密码哈希:', this.password);
+    const result = await bcrypt.compare(candidatePassword, this.password);
+    console.log('密码比较结果:', result);
+    return result;
 };
 
 module.exports = mongoose.model('User', userSchema); 

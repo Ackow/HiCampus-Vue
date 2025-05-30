@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
@@ -39,18 +39,23 @@ const register = async (req, res) => {
             }
         }
 
+        console.log('开始创建新用户');
         // 创建新用户
         const user = new User({
             username,
-            password: await bcrypt.hash(password, 10),
+            password,
             nickname,
             studentId,
             age: '18',
             gender: 'male',
-            avatar: 'default-avatar.jpg'
+            avatar: 'default-avatar.jpg',
+            // 如果是第一个用户，设置为管理员
+            role: (await User.countDocuments()) === 0 ? 'admin' : 'user'
         });
 
+        console.log('保存用户前:', user);
         await user.save();
+        console.log('保存用户后:', user);
 
         // 生成JWT
         const token = jwt.sign(
@@ -67,10 +72,12 @@ const register = async (req, res) => {
                 username: user.username,
                 nickname: user.nickname,
                 studentId: user.studentId,
+                role: user.role,
                 avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
             }
         });
     } catch (error) {
+        console.error('注册错误:', error);
         handleError(res, error, '注册错误');
     }
 };
@@ -86,12 +93,14 @@ const login = async (req, res) => {
 
         // 查找用户
         const user = await User.findOne({ username });
+        
         if (!user) {
             return res.status(401).json({ message: '用户名或密码错误' });
         }
 
         // 验证密码
-        const isValidPassword = await bcrypt.compare(password, user.password);
+        const isValidPassword = await user.comparePassword(password);
+        
         if (!isValidPassword) {
             return res.status(401).json({ message: '用户名或密码错误' });
         }
@@ -114,10 +123,12 @@ const login = async (req, res) => {
                 uid: user.uid,
                 age: user.age,
                 gender: user.gender,
+                role: user.role,
                 avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
             }
         });
     } catch (error) {
+        console.error('登录错误:', error);
         handleError(res, error, '登录错误');
     }
 };
@@ -139,6 +150,7 @@ const getUserInfo = async (req, res) => {
                 uid: user.uid,
                 age: user.age,
                 gender: user.gender,
+                role: user.role,
                 avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
             }
         });
