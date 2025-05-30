@@ -1,15 +1,23 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from './components/Header.vue'
+import { eventBus } from './utils/eventBus.js'
 
 const route = useRoute()
 const showHeader = computed(() => route.meta.showHeader !== false)
+const currentComponent = ref(null)
+
+const handleSearch = (keyword) => {
+  console.log('App: 收到搜索事件:', keyword)
+  // 使用事件总线发送搜索事件
+  eventBus.emitSearch(keyword)
+}
 </script>
 
 <template>
   <div class="app-container">
-    <Header v-if="showHeader" />
+    <Header v-if="showHeader" @search="handleSearch" />
     <div class="main-layout">
       <router-view />
     </div>

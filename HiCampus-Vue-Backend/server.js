@@ -27,6 +27,9 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 静态文件服务
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // 静态文件服务 - 头像
 app.use('/uploads/avatars', express.static('uploads/avatars', {
     setHeaders: (res, path, stat) => {

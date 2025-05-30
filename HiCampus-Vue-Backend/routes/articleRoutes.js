@@ -3,6 +3,9 @@ const router = express.Router();
 const articleController = require('../controllers/articleController');
 const authenticateToken = require('../middleware/auth');
 
+// 搜索文章 - 放在最前面
+router.get('/articles/search', authenticateToken, articleController.searchArticles);
+
 // 获取文章列表
 router.get('/articles', articleController.getArticles);
 

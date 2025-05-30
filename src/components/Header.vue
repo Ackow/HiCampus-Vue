@@ -65,8 +65,22 @@
           class="search-input"
           placeholder="输入你感兴趣的内容..."
           ref="searchInput"
+          v-model="searchKeyword"
           @keydown.esc="closeSearch"
+          @keyup.enter="handleSearch"
         >
+        <button 
+          class="clear-search-btn" 
+          @click="clearSearch"
+        >
+          <img src="/assets/images/叉.svg" alt="删除" class="clear-icon">
+        </button>
+        <button 
+          class="search-btn" 
+          @click="handleSearch"
+        >
+          <img src="/assets/images/搜索.svg" alt="搜索" class="search-icon">
+        </button>
       </div>
     </div>
   </header>
@@ -77,6 +91,7 @@ import { useSearch } from '../utils/useSearch.js'
 import { ref, onMounted, defineEmits, onUnmounted, nextTick } from 'vue';
 import { useAuth } from '../utils/useAuth.js';
 import { useRouter } from 'vue-router';
+import { eventBus } from '../utils/eventBus.js';
 
 const {
   searchActive,
@@ -87,6 +102,9 @@ const {
   openSearch,
   closeSearch
 } = useSearch()
+
+const searchKeyword = ref('')
+const emit = defineEmits(['init-profile'])
 
 const auth = useAuth();
 const router = useRouter();
@@ -129,12 +147,25 @@ const logout = () => {
   auth.logout();
 };
 
-const emit = defineEmits(['init-profile'])
-
 const handleProfileClick = () => {
   console.log('Header:个人信息按钮被点击');
   router.push({ name: 'Profile' });
   emit('init-profile');
+}
+
+// 处理搜索
+const handleSearch = () => {
+  if (searchKeyword.value.trim()) {
+    console.log('触发搜索:', searchKeyword.value.trim())
+    eventBus.emitSearch(searchKeyword.value.trim())
+    closeSearch()
+  }
+}
+
+// 清除搜索
+const clearSearch = () => {
+  searchKeyword.value = ''
+  searchInput.value?.focus()
 }
 </script>
 

@@ -62,11 +62,13 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useArticleList } from '../scripts/ArticleList.js';
 import PostDetail from '../views/PostDetail.vue';
+import { eventBus } from '../utils/eventBus.js';
 import '../styles/articleList.css';
 
 const selectedCategory = ref('all');
 const showPostDetail = ref(false);
 const currentPost = ref(null);
+const searchKeyword = ref('');
 
 const categories = [
   { label: '全部', value: 'all' },
@@ -89,8 +91,17 @@ const {
   getAvatarUrl,
   handleImageError,
   handleAvatarError,
-  checkArticlesLikeStatus
+  checkArticlesLikeStatus,
+  searchArticles
 } = useArticleList();
+
+// 添加 handleSearch 函数
+const handleSearch = async (keyword) => {
+  console.log('ArticleList: 处理搜索请求:', keyword);
+  if (keyword) {
+    await searchArticles(keyword);
+  }
+};
 
 const filteredArticles = computed(() => {
   if (selectedCategory.value === 'all') {
@@ -137,6 +148,14 @@ const updateLikeCount = (newCount) => {
   }
 };
 
+// 监听搜索事件
+watch(eventBus.onSearch(), async (newKeyword) => {
+  if (newKeyword) {
+    console.log('ArticleList: 收到搜索关键词:', newKeyword)
+    await searchArticles(newKeyword);
+  }
+});
+
 // 监听文章列表变化
 watch(() => articles.value, async (newArticles) => {
   if (newArticles && newArticles.length > 0) {
@@ -147,8 +166,16 @@ watch(() => articles.value, async (newArticles) => {
 onMounted(() => {
   console.log('ArticleList mounted, articles:', articles.value);
 });
+
+defineExpose({
+  handleSearch
+});
 </script>
 
 <style scoped>
 @import '../styles/articleList.css';
+
+.search-active {
+  background-color: #f5f5f5;
+}
 </style> 

@@ -129,6 +129,57 @@
     opacity: 1;
 }
 
+/* 搜索框内的按钮样式 */
+.search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.search-btn:hover {
+    opacity: 1;
+}
+
+.search-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.clear-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.clear-search-btn:hover {
+    opacity: 1;
+}
+
 /* 用户头像样式 */
 .user-profile-link {
     display: flex;

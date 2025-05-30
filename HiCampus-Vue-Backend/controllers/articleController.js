@@ -583,6 +583,65 @@ const getCollectStatus = async (req, res) => {
     }
 };
 
+// 搜索文章
+const searchArticles = async (req, res) => {
+    try {
+        const { keyword } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 8;
+        const skip = (page - 1) * limit;
+
+        // 构建搜索条件
+        const searchQuery = {
+            $or: [
+                { title: { $regex: keyword, $options: 'i' } },
+                { content: { $regex: keyword, $options: 'i' } }
+            ]
+        };
+
+        // 执行搜索
+        const articles = await Article.find(searchQuery)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate('creator', 'nickname avatar')
+            .populate('mentionedUsers', 'nickname avatar');
+
+        // 获取每篇文章的图片
+        const articlesWithImages = await Promise.all(articles.map(async (article) => {
+            const images = await Image.find({ article: article._id });
+            return {
+                ...article.toObject(),
+                images: images.map(img => img.imageUrl.split('/').pop()),
+                creator: article.creator ? {
+                    ...article.creator.toObject(),
+                    avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
+                } : null,
+                mentionedUsers: article.mentionedUsers ? article.mentionedUsers.map(user => ({
+                    ...user.toObject(),
+                    avatar: user.avatar ? user.avatar.split('/').pop() : 'default-avatar.jpg'
+                })) : []
+            };
+        }));
+
+        // 获取搜索结果总数
+        const total = await Article.countDocuments(searchQuery);
+
+        res.json({
+            articles: articlesWithImages,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            totalArticles: total
+        });
+    } catch (error) {
+        console.error('搜索文章失败:', error);
+        res.status(500).json({ 
+            message: '搜索文章失败',
+            error: error.message 
+        });
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
@@ -598,5 +657,6 @@ module.exports = {
     getLikeStatus,
     collectArticle,
     uncollectArticle,
-    getCollectStatus
+    getCollectStatus,
+    searchArticles
 }; 

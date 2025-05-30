@@ -126,6 +126,35 @@ export function useArticleList() {
   // 监听路由变化
   watch(() => route.name, handleRouteChange);
 
+  // 搜索文章
+  const searchArticles = async (keyword) => {
+    try {
+      isLoading.value = true;
+      error.value = null;
+      
+      const response = await fetch(`http://localhost:3000/api/articles/search?keyword=${encodeURIComponent(keyword)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('搜索失败');
+      }
+      
+      const data = await response.json();
+      articles.value = data.articles;
+      
+      // 检查点赞状态
+      await checkArticlesLikeStatus();
+    } catch (err) {
+      console.error('搜索文章失败:', err);
+      error.value = '搜索失败，请稍后重试';
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   onMounted(() => {
     window.addEventListener('scroll', handleScroll);
     loadArticles();
@@ -143,6 +172,7 @@ export function useArticleList() {
     getAvatarUrl,
     handleImageError,
     handleAvatarError,
-    checkArticlesLikeStatus
+    checkArticlesLikeStatus,
+    searchArticles
   };
 } 
