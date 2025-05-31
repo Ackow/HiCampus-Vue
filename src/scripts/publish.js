@@ -194,7 +194,7 @@ export function usePublish() {
     formData.append('image', file)
 
     try {
-      const response = await fetch('http://localhost:3000/api/upload/image', {
+      const response = await fetch('http://localhost:3000/api/user/upload/image', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

@@ -66,14 +66,14 @@ export function useAuth() {
   const handleLogin = async () => {
     try {
       console.log('开始登录请求:', {
-        url: `${API_URL}/login`,
+        url: `${API_URL}/user/login`,
         data: {
           username: loginForm.username,
           password: loginForm.password
         }
       })
 
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${API_URL}/user/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ export function useAuth() {
       }
 
       console.log('开始注册请求:', {
-        url: `${API_URL}/register`,
+        url: `${API_URL}/user/register`,
         data: {
           username: registerForm.username,
           password: registerForm.password,
@@ -146,7 +146,7 @@ export function useAuth() {
         }
       })
 
-      const response = await fetch(`${API_URL}/register`, {
+      const response = await fetch(`${API_URL}/user/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
