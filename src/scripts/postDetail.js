@@ -57,7 +57,8 @@ export function usePostDetail(props, emit) {
 
   // 关闭详情
   const closeDetail = () => {
-    emit('close')
+    console.log('关闭文章详情');
+    emit('close');
   }
 
   // 处理头像加载错误

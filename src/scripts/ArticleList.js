@@ -129,29 +129,75 @@ export function useArticleList() {
   // 搜索文章
   const searchArticles = async (keyword) => {
     try {
-      isLoading.value = true;
-      error.value = null;
+      console.log('开始搜索文章，关键词:', keyword);
+      const token = localStorage.getItem('token');
       
-      const response = await fetch(`http://localhost:3000/api/articles/search?keyword=${encodeURIComponent(keyword)}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('搜索失败');
+      // 构建请求头
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const data = await response.json();
-      articles.value = data.articles;
+      const response = await fetch(`http://localhost:3000/api/articles/search?keyword=${encodeURIComponent(keyword)}`, {
+        headers
+      });
       
-      // 检查点赞状态
-      await checkArticlesLikeStatus();
-    } catch (err) {
-      console.error('搜索文章失败:', err);
-      error.value = '搜索失败，请稍后重试';
-    } finally {
-      isLoading.value = false;
+      if (response.ok) {
+        const data = await response.json();
+        console.log('搜索到的文章:', data);
+        articles.value = data.articles.map(article => ({
+          ...article,
+          images: article.images || []
+        }));
+        return data.articles;
+      } else {
+        const errorData = await response.json();
+        console.error('搜索文章失败:', errorData);
+        throw new Error(errorData.message || '搜索失败');
+      }
+    } catch (error) {
+      console.error('搜索文章失败:', error);
+      throw error;
+    }
+  };
+
+  // 获取文章列表
+  const fetchArticles = async () => {
+    try {
+      console.log('开始获取文章列表');
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        error.value = '请先登录后再查看文章';
+        articles.value = [];
+        return [];
+      }
+      
+      // 构建请求头
+      const headers = {
+        'Authorization': `Bearer ${token}`
+      };
+      
+      const response = await fetch('http://localhost:3000/api/articles', {
+        headers
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('获取到的文章列表:', data);
+        articles.value = data.articles.map(article => ({
+          ...article,
+          images: article.images || []
+        }));
+        return data.articles;
+      } else {
+        const errorData = await response.json();
+        console.error('获取文章列表失败:', errorData);
+        throw new Error(errorData.message || '获取文章列表失败');
+      }
+    } catch (error) {
+      console.error('获取文章列表失败:', error);
+      throw error;
     }
   };
 
@@ -173,6 +219,7 @@ export function useArticleList() {
     handleImageError,
     handleAvatarError,
     checkArticlesLikeStatus,
-    searchArticles
+    searchArticles,
+    fetchArticles
   };
 } 

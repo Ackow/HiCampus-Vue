@@ -30,22 +30,29 @@ const openProfile = () => {
 }
 
 // 监听路由变化
-watch(() => route.name, (newName) => {
-  console.log('路由名称变化:', newName);
-  if (newName === 'Profile') {
+watch(() => route.name, (newRouteName) => {
+  console.log('路由名称变化:', newRouteName);
+  if (newRouteName === 'UserProfile') {
+    console.log('检测到用户主页路由，重新加载内容');
     showProfile.value = true;
     showEditProfile.value = false;
     nextTick(() => {
       profileRef.value?.initData?.();
     });
-  } else if (newName === 'EditProfile') {
+  } else if (newRouteName === 'Profile') {
+    showProfile.value = true;
+    showEditProfile.value = false;
+    nextTick(() => {
+      profileRef.value?.initData?.();
+    });
+  } else if (newRouteName === 'EditProfile') {
     showProfile.value = false;
     showEditProfile.value = true;
-  } else if (newName === 'Home' || newName === 'Notification') {
+  } else if (newRouteName === 'Home' || newRouteName === 'Notification') {
     showProfile.value = false;
     showEditProfile.value = false;
   }
-}, { immediate: true });
+});
 
 const updateMainContainerWidth = () => {
   const mainContainer = document.querySelector('.main-container')
@@ -57,7 +64,7 @@ const updateMainContainerWidth = () => {
 onMounted(() => {
   console.log('Home组件挂载，当前路由名称:', route.name);
   // 页面加载时检查路由名称
-  if (route.name === 'Profile') {
+  if (route.name === 'Profile' || route.name === 'UserProfile') {
     showProfile.value = true;
     showEditProfile.value = false;
     nextTick(() => {

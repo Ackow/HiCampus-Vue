@@ -12,7 +12,7 @@
     </div>
 
     <div class="content-grid">
-      <div v-for="article in filteredArticles" :key="article._id" class="content-card" @click="openPostDetail(article)">
+      <div v-for="article in filteredArticles" :key="article._id" class="content-card" @click="handleCardClick(article)">
         <div class="card-image">
           <img :src="getArticleImage(article)" 
                alt="内容图片"
@@ -153,6 +153,13 @@ const handleCategoryChange = (category) => {
 };
 
 const openPostDetail = (article) => {
+  // 检查是否登录
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.alert('请先登录后再查看文章详情');
+    return;
+  }
+
   const userInfo = getUserDisplayInfo(article);
   currentPost.value = {
     id: article._id,
@@ -188,6 +195,17 @@ const updateLikeCount = (newCount) => {
   if (currentPost.value) {
     currentPost.value.likes = newCount;
   }
+};
+
+// 修改文章卡片点击事件
+const handleCardClick = (article) => {
+  // 检查是否登录
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.alert('请先登录后再查看文章详情');
+    return;
+  }
+  openPostDetail(article);
 };
 
 // 监听搜索事件

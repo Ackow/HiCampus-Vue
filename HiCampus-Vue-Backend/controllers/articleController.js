@@ -780,6 +780,35 @@ const deleteArticle = async (req, res) => {
     }
 };
 
+// 获取指定用户发布的文章
+const getUserArticlesById = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const articles = await Article.find({ creator: userId })
+            .sort({ createdAt: -1 })
+            .populate('creator', 'nickname avatar');
+
+        // 获取每篇文章的图片
+        const articlesWithImages = await Promise.all(articles.map(async (article) => {
+            const images = await Image.find({ article: article._id });
+            return {
+                ...article.toObject(),
+                images: images.map(img => img.imageUrl.split('/').pop()),
+                creator: article.creator ? {
+                    ...article.creator.toObject(),
+                    avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
+                } : null,
+                isLiked: article.likedBy.includes(req.user.userId)
+            };
+        }));
+
+        res.json({ articles: articlesWithImages });
+    } catch (err) {
+        console.error('获取用户文章错误:', err);
+        res.status(500).json({ message: '服务器错误' });
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
@@ -789,6 +818,7 @@ module.exports = {
     addComment,
     deleteComment,
     getUserArticles,
+    getUserArticlesById,
     getUserFavorites,
     getUserLikes,
     likeArticle,

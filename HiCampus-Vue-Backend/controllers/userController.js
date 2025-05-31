@@ -275,11 +275,39 @@ const searchUsers = async (req, res) => {
     }
 };
 
+// 获取指定用户信息
+const getUserById = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId).select('-password');
+        
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        res.json({
+            user: {
+                id: user._id,
+                username: user.username,
+                nickname: user.nickname,
+                studentId: user.studentId,
+                uid: user.uid,
+                age: user.age,
+                gender: user.gender,
+                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
+            }
+        });
+    } catch (error) {
+        handleError(res, error, '获取用户信息错误');
+    }
+};
+
 module.exports = {
     register,
     login,
     getUserInfo,
     updateUserInfo,
     uploadAvatar,
-    searchUsers
+    searchUsers,
+    getUserById
 }; 

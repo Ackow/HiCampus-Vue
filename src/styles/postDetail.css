@@ -49,6 +49,14 @@ html {
 .user-info {
     display: flex;
     align-items: center;
+    padding: 0.2rem 0.5rem;
+}
+
+.user-info:hover{
+    cursor: pointer;
+    background-color: #eee;
+    border-radius: 20px;
+
 }
 
 .detail-avatar {
@@ -189,14 +197,14 @@ html {
 }
 
 .post-title {
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     font-weight: 600;
     color: #333;
     margin-bottom: 0.625rem;
 }
 
 .post-description {
-    font-size: 1rem;
+    font-size: 1.25rem;
     color: #666;
     line-height: 1.5;
 }

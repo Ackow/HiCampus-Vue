@@ -235,3 +235,12 @@
 .note-comment i {
   margin-right: 5px;
 }
+
+.note-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.note-card:hover {
+  transform: scale(1.02);
+}

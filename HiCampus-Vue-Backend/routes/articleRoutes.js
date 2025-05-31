@@ -18,6 +18,9 @@ router.get('/articles/mentioned', authenticateToken, articleController.getMentio
 // 获取用户发布的文章
 router.get('/articles/user', authenticateToken, articleController.getUserArticles);
 
+// 获取指定用户发布的文章
+router.get('/articles/user/:userId', authenticateToken, articleController.getUserArticlesById);
+
 // 获取用户收藏的文章
 router.get('/articles/favorites', authenticateToken, articleController.getUserFavorites);
 

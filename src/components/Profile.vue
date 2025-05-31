@@ -1,94 +1,101 @@
 <template>
-  <div class="profile-container" v-if="userInfo">
-    <div class="profile-header">
-      <div class="profile-left">
-        <div class="avatar-container">
-          <img class="profile-avatar" :src="userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" alt="头像">
+  <div>
+    <div class="profile-container" v-if="userInfo">
+      <div class="profile-header">
+        <div class="profile-left">
+          <div class="avatar-container">
+            <img class="profile-avatar" :src="userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" alt="头像">
+          </div>
+        </div>
+        <div class="profile-right">
+          <div class="profile-nickname-container">
+            <div class="profile-nickname">{{ userInfo.nickname || userInfo.username }}</div>
+            <a class="edit-nickname-btn" @click="handleEditClick" v-if="isCurrentUser">
+              <img src="/assets/images/编辑.svg" alt="编辑" class="edit-icon">
+            </a>
+          </div>
+          <div class="profile-meta">
+            <div class="profile-meta-item">嗨号：{{ userInfo.uid }}</div>
+            <div class="profile-student-id">学号：{{ userInfo.studentId || '未设置' }}</div>
+          </div>
+          <div class="profile-tags">
+            <img :src="userInfo.gender === 'male' ? '/assets/images/男.svg' : '/assets/images/女.svg'" alt="性别" class="profile-gender">
+            <span class="profile-age">{{ userInfo.age }}岁</span>
+          </div>
         </div>
       </div>
-      <div class="profile-right">
-        <div class="profile-nickname-container">
-          <div class="profile-nickname">{{ userInfo.nickname || userInfo.username }}</div>
-          <a class="edit-nickname-btn" @click="handleEditClick">
-            <img src="/assets/images/编辑.svg" alt="编辑" class="edit-icon">
-          </a>
-        </div>
-        <div class="profile-meta">
-          <div class="profile-meta-item">嗨号：{{ userInfo.uid }}</div>
-          <div class="profile-student-id">学号：{{ userInfo.studentId || '未设置' }}</div>
-        </div>
-        <div class="profile-tags">
-          <img :src="userInfo.gender === 'male' ? '/assets/images/男.svg' : '/assets/images/女.svg'" alt="性别" class="profile-gender">
-          <span class="profile-age">{{ userInfo.age }}岁</span>
+      <div class="profile-tabs" v-if="isCurrentUser">
+        <div class="profile-tab" :class="{ active: activeTab === 'notes' }" @click="handleTabChange('notes')">笔记</div>
+        <div class="profile-tab" :class="{ active: activeTab === 'favorites' }" @click="handleTabChange('favorites')">收藏</div>
+        <div class="profile-tab" :class="{ active: activeTab === 'likes' }" @click="handleTabChange('likes')">点赞</div>
+      </div>
+      <div v-else class="profile-tabs">
+        <div class="profile-tab active">笔记</div>
+      </div>
+      <div v-if="isLoading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>加载中...</p>
+      </div>
+      <div v-else-if="error" class="error-state">
+        <p>{{ error }}</p>
+      </div>
+      <div v-else-if="getNotesByTab.length === 0" class="empty-state">
+        <p>暂无内容</p>
+      </div>
+      <div v-else class="note-list">
+        <div class="note-card" v-for="note in getNotesByTab" :key="note._id" @click="showPostDetail(note)">
+          <img :src="getImageUrl(note)" 
+               :alt="note.title" 
+               class="note-img" 
+               v-if="hasImages(note)"
+               @error="handleImageError">
+          <div class="note-title">{{ note.title }}</div>
+          <div class="note-meta">
+            <span class="note-like">
+              <img :src="note.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+                   :alt="note.isLiked ? '已点赞' : '未点赞'" 
+                   class="note-like-icon"
+                   :class="{ 'liked': note.isLiked }">
+              {{ note.likeCount || 0 }}
+            </span>
+            <span class="note-comment">
+              <img src="/assets/images/评论.svg" alt="评论" class="note-comment-icon">
+              {{ note.commentCount || 0 }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
-    <div class="profile-tabs">
-      <div class="profile-tab" :class="{ active: activeTab === 'notes' }" @click="handleTabChange('notes')">笔记</div>
-      <div class="profile-tab" :class="{ active: activeTab === 'favorites' }" @click="handleTabChange('favorites')">收藏</div>
-      <div class="profile-tab" :class="{ active: activeTab === 'likes' }" @click="handleTabChange('likes')">点赞</div>
-    </div>
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>加载中...</p>
-    </div>
-    <div v-else-if="error" class="error-state">
-      <p>{{ error }}</p>
-    </div>
-    <div v-else-if="getNotesByTab.length === 0" class="empty-state">
-      <p>暂无内容</p>
-    </div>
-    <div v-else class="note-list">
-      <div class="note-card" v-for="note in getNotesByTab" :key="note._id" @click="showPostDetail(note)">
-        <img :src="getImageUrl(note)" 
-             :alt="note.title" 
-             class="note-img" 
-             v-if="hasImages(note)"
-             @error="handleImageError">
-        <div class="note-title">{{ note.title }}</div>
-        <div class="note-meta">
-          <span class="note-like">
-            <img :src="note.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
-                 :alt="note.isLiked ? '已点赞' : '未点赞'" 
-                 class="note-like-icon"
-                 :class="{ 'liked': note.isLiked }">
-            {{ note.likeCount || 0 }}
-          </span>
-          <span class="note-comment">
-            <img src="/assets/images/评论.svg" alt="评论" class="note-comment-icon">
-            {{ note.commentCount || 0 }}
-          </span>
+    <div v-else class="profile-container">
+      <div class="profile-header">
+        <div class="profile-message">
+          请先登录以查看个人信息
         </div>
       </div>
     </div>
-  </div>
-  <div v-else class="profile-container">
-    <div class="profile-header">
-      <div class="profile-message">
-        请先登录以查看个人信息
-      </div>
-    </div>
-  </div>
 
-  <PostDetail
-    v-if="showDetail"
-    :show="showDetail"
-    :post-detail="selectedPost"
-    @close="closePostDetail"
-    @update-like-count="handleLikeUpdate"
-    @update-collect-count="handleCollectUpdate"
-  />
+    <PostDetail
+      v-if="showDetail"
+      :show="showDetail"
+      :post-detail="selectedPost"
+      @close="closePostDetail"
+      @update-like-count="handleLikeUpdate"
+      @update-collect-count="handleCollectUpdate"
+    />
+  </div>
 </template>
 
 <script setup>
 import { useProfileData } from '../utils/useProfileData.js'
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useAuth } from '../utils/useAuth.js'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import PostDetail from '../views/PostDetail.vue'
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuth();
+
 const {
   userInfo,
   notes,
@@ -100,7 +107,9 @@ const {
   error,
   initData,
   handleTabChange,
-  fetchUserFavorites
+  fetchUserInfo,
+  fetchUserFavorites,
+  fetchUserNotes
 } = useProfileData()
 
 // PostDetail 相关状态
@@ -191,8 +200,11 @@ const closePostDetail = () => {
 
 const handleUserInfoUpdate = (event) => {
   console.log('Profile: 收到用户信息更新事件', event.detail);
-  userInfo.value = event.detail;
-}
+  if (event.detail && event.detail.id) {
+    // 如果收到的是用户ID，重新加载用户数据
+    loadUserData();
+  }
+};
 
 const handleEditClick = () => {
   router.push({ name: 'EditProfile' });
@@ -252,23 +264,82 @@ watch(activeTab, (newTab) => {
   }
 });
 
-onMounted(() => {
+// 加载用户数据
+const loadUserData = async () => {
+  try {
+    // 获取要查看的用户ID
+    const userId = route.params.userId;
+    console.log('当前路由参数:', route.params);
+    console.log('要查看的用户ID:', userId);
+    
+    if (userId) {
+      // 查看其他用户的个人主页
+      console.log('开始获取用户信息:', userId);
+      const user = await fetchUserInfo(userId);
+      console.log('获取到的用户信息:', user);
+      
+      if (user) {
+        console.log('开始获取用户文章:', userId);
+        const articles = await fetchUserNotes(userId);
+        console.log('获取到的用户文章:', articles);
+      } else {
+        console.error('获取用户信息失败');
+        error.value = '获取用户信息失败';
+      }
+    } else {
+      // 查看自己的个人主页
+      console.log('查看自己的个人主页');
+      await initData();
+    }
+  } catch (error) {
+    console.error('加载用户数据失败:', error);
+    error.value = '加载用户数据失败';
+  }
+};
+
+// 监听路由参数变化
+watch(() => route.params.userId, async (newUserId, oldUserId) => {
+  console.log('路由参数变化，新的用户ID:', newUserId, '旧的用户ID:', oldUserId);
+  if (newUserId !== oldUserId) {
+    // 重置状态
+    userInfo.value = null;
+    notes.value = [];
+    favorites.value = [];
+    likes.value = [];
+    error.value = null;
+    
+    // 重新加载数据
+    await loadUserData();
+  }
+}, { immediate: true });
+
+// 修改 isCurrentUser 计算属性
+const isCurrentUser = computed(() => {
+  const currentUserId = auth.user?._id;
+  const viewedUserId = route.params.userId;
+  console.log('当前用户ID:', currentUserId);
+  console.log('查看的用户ID:', viewedUserId);
+  return !viewedUserId || currentUserId === viewedUserId;
+});
+
+onMounted(async () => {
   console.log('Profile组件挂载');
   window.addEventListener('userInfoUpdated', handleUserInfoUpdate);
   
   // 检查是否已登录
-  if (localStorage.getItem('token')) {
-    console.log('检测到登录token，开始初始化数据');
-    initData();
-  } else {
+  if (!localStorage.getItem('token')) {
     console.log('未检测到登录token，请先登录');
-    router.push('/login');
+    router.push('/register-login');
+    return;
   }
-})
+
+  // 立即加载用户数据
+  await loadUserData();
+});
 
 onUnmounted(() => {
-  window.removeEventListener('userInfoUpdated', handleUserInfoUpdate)
-})
+  window.removeEventListener('userInfoUpdated', handleUserInfoUpdate);
+});
 
 defineExpose({ initData })
 </script>
@@ -276,12 +347,4 @@ defineExpose({ initData })
 <style scoped>
 @import '../styles/profile.css';
 
-.note-card {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.note-card:hover {
-  transform: scale(1.02);
-}
 </style>

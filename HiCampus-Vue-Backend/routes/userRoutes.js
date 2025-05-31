@@ -15,6 +15,9 @@ router.post('/login', userController.login);
 // 获取用户信息路由
 router.get('/user', authenticateToken, userController.getUserInfo);
 
+// 获取指定用户信息路由
+router.get('/user/:userId', authenticateToken, userController.getUserById);
+
 // 搜索用户路由
 router.get('/users/search', userController.searchUsers);
 

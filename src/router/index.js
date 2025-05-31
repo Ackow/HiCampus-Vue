@@ -24,6 +24,15 @@ const routes = [
         }
       },
       {
+        path: 'profile/:userId',
+        name: 'UserProfile',
+        component: () => import('../components/Profile.vue'),
+        meta: {
+          showSidebar: true,
+          showHeader: true
+        }
+      },
+      {
         path: 'edit-profile',
         name: 'EditProfile',
         component: () => import('../components/EditProfile.vue'),
@@ -65,6 +74,12 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes
+});
+
+// 添加全局路由守卫
+router.beforeEach((to, from, next) => {
+  console.log('路由跳转:', { from: from.path, to: to.path });
+  next();
 });
 
 export default router;
