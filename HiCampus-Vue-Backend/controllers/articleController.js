@@ -318,14 +318,23 @@ const deleteComment = async (req, res) => {
         const { articleId, commentId } = req.params;
         const userId = req.user.userId;
 
-        // 查找评论
-        const comment = await Comment.findById(commentId);
+        // 查找评论（同时验证评论是否属于指定文章）
+        const comment = await Comment.findOne({
+            _id: commentId,
+            article: articleId
+        });
+
         if (!comment) {
             return res.status(404).json({ message: '评论不存在' });
         }
 
-        // 验证权限（评论作者或管理员可以删除）
+        // 获取当前用户信息
         const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 验证权限（评论作者或管理员可以删除）
         if (comment.commenter.toString() !== userId && user.role !== 'admin') {
             return res.status(403).json({ message: '没有权限删除此评论' });
         }
@@ -705,8 +714,14 @@ const deleteArticle = async (req, res) => {
             return res.status(404).json({ message: '文章不存在' });
         }
 
-        // 验证是否是文章作者
-        if (article.creator.toString() !== userId) {
+        // 获取当前用户信息
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 验证权限（文章作者或管理员可以删除）
+        if (article.creator.toString() !== userId && user.role !== 'admin') {
             return res.status(403).json({ message: '没有权限删除此文章' });
         }
 
