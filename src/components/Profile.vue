@@ -109,7 +109,8 @@ const {
   handleTabChange,
   fetchUserInfo,
   fetchUserFavorites,
-  fetchUserNotes
+  fetchUserNotes,
+  fetchUserLikes
 } = useProfileData()
 
 // PostDetail 相关状态
@@ -256,44 +257,64 @@ const handleCollectUpdate = (data) => {
 }
 
 // 监听标签页变化
-watch(activeTab, (newTab) => {
-  console.log('标签页切换到:', newTab);
-  if (newTab === 'favorites') {
-    console.log('切换到收藏标签页，重新获取收藏列表');
-    fetchUserFavorites();
+watch(activeTab, async (newTab) => {
+  try {
+    isLoading.value = true;
+    switch (newTab) {
+      case 'notes':
+        await fetchUserNotes();
+        break;
+      case 'favorites':
+        await fetchUserFavorites();
+        break;
+      case 'likes':
+        await fetchUserLikes();
+        break;
+    }
+  } catch (error) {
+    console.error('加载数据失败:', error);
+    error.value = '加载数据失败';
+  } finally {
+    isLoading.value = false;
   }
 });
 
 // 加载用户数据
 const loadUserData = async () => {
   try {
-    // 获取要查看的用户ID
+    isLoading.value = true;
     const userId = route.params.userId;
-    console.log('当前路由参数:', route.params);
-    console.log('要查看的用户ID:', userId);
     
     if (userId) {
       // 查看其他用户的个人主页
-      console.log('开始获取用户信息:', userId);
       const user = await fetchUserInfo(userId);
-      console.log('获取到的用户信息:', user);
-      
       if (user) {
-        console.log('开始获取用户文章:', userId);
-        const articles = await fetchUserNotes(userId);
-        console.log('获取到的用户文章:', articles);
+        await fetchUserNotes(userId);
       } else {
-        console.error('获取用户信息失败');
         error.value = '获取用户信息失败';
       }
     } else {
       // 查看自己的个人主页
-      console.log('查看自己的个人主页');
       await initData();
+      
+      // 根据当前标签页加载相应数据
+      switch (activeTab.value) {
+        case 'notes':
+          await fetchUserNotes();
+          break;
+        case 'favorites':
+          await fetchUserFavorites();
+          break;
+        case 'likes':
+          await fetchUserLikes();
+          break;
+      }
     }
   } catch (error) {
     console.error('加载用户数据失败:', error);
     error.value = '加载用户数据失败';
+  } finally {
+    isLoading.value = false;
   }
 };
 

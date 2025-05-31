@@ -123,7 +123,9 @@ export function usePostDetail(props, emit) {
 
     try {
       const method = isLiked.value ? 'delete' : 'post'
-      const response = await axios[method](`/api/articles/${props.postDetail.id}/like`, {}, {
+      const response = await axios({
+        method: method,
+        url: `/api/articles/${props.postDetail.id}/like`,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -178,7 +180,9 @@ export function usePostDetail(props, emit) {
 
     try {
       const method = isCollected.value ? 'delete' : 'post'
-      const response = await axios[method](`/api/articles/${props.postDetail.id}/collect`, {}, {
+      const response = await axios({
+        method: method,
+        url: `/api/articles/${props.postDetail.id}/collect`,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

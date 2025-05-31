@@ -49,13 +49,8 @@ export function useProfileData() {
   };
 
   const getNotesByTab = computed(() => {
-    // console.log('当前标签页:', activeTab.value);
-    // console.log('当前用户信息:', userInfo.value);
-    // console.log('当前文章列表:', notes.value);
-    
     // 如果正在查看其他用户，只返回笔记
-    if (userInfo.value && userInfo.value.id !== auth.user?.id) {
-      console.log('查看其他用户，只显示笔记');
+    if (userInfo.value && userInfo.value._id !== auth.user?._id) {
       return notes.value;
     }
     
@@ -74,7 +69,6 @@ export function useProfileData() {
 
   const initData = async () => {
     if (!localStorage.getItem('token')) {
-      console.log('未检测到登录token');
       return;
     }
     isLoading.value = true;
@@ -86,11 +80,17 @@ export function useProfileData() {
       
       // 如果获取到用户信息，再获取其他数据
       if (user) {
-        await Promise.all([
-          fetchUserNotes(),
-          fetchUserFavorites(),
-          fetchUserLikes()
-        ]);
+        // 如果是查看自己的主页，加载所有数据
+        if (user._id === auth.user?._id) {
+          await Promise.all([
+            fetchUserNotes(),
+            fetchUserFavorites(),
+            fetchUserLikes()
+          ]);
+        } else {
+          // 如果是查看其他用户的主页，只加载笔记
+          await fetchUserNotes(user._id);
+        }
       }
     } catch (error) {
       console.error('初始化数据失败:', error);
@@ -109,26 +109,36 @@ export function useProfileData() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('获取到的点赞文章数据:', data);
-        likes.value = data.articles.map(article => ({
-          ...article,
-          isLiked: true,
-          images: article.images || []
-        }));
-        console.log('处理后的点赞文章数据:', likes.value);
+        if (data.articles && Array.isArray(data.articles)) {
+          likes.value = data.articles.map(article => ({
+            ...article,
+            isLiked: true,
+            images: article.images || [],
+            likeCount: article.likeCount || 0,
+            collectCount: article.collectCount || 0,
+            commentCount: article.commentCount || 0,
+            creator: article.creator ? {
+              ...article.creator,
+              avatar: article.creator.avatar ? article.creator.avatar : 'default-avatar.jpg'
+            } : null
+          }));
+        } else {
+          likes.value = [];
+        }
+      } else {
+        likes.value = [];
       }
     } catch (error) {
       console.error('获取点赞文章失败:', error);
       error.value = '获取点赞文章失败';
+      likes.value = [];
     }
   };
 
   const fetchUserFavorites = async () => {
     try {
-      console.log('开始获取收藏文章...');
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('未找到登录token');
         favorites.value = [];
         return;
       }
@@ -138,37 +148,26 @@ export function useProfileData() {
           'Authorization': `Bearer ${token}`
         }
       });
-
-      console.log('收藏文章API响应状态:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('获取到的收藏文章原始数据:', data);
-        
         if (data.articles && Array.isArray(data.articles)) {
-          favorites.value = data.articles.map(article => {
-            // console.log('处理文章数据:', article);
-            return {
-              ...article,
-              isCollected: true,
-              images: article.images || [],
-              likeCount: article.likeCount || 0,
-              collectCount: article.collectCount || 0,
-              commentCount: article.commentCount || 0,
-              creator: article.creator ? {
-                ...article.creator,
-                avatar: article.creator.avatar ? article.creator.avatar : 'default-avatar.jpg'
-              } : null
-            };
-          });
-          console.log('处理后的收藏文章列表:', favorites.value);
+          favorites.value = data.articles.map(article => ({
+            ...article,
+            isCollected: true,
+            images: article.images || [],
+            likeCount: article.likeCount || 0,
+            collectCount: article.collectCount || 0,
+            commentCount: article.commentCount || 0,
+            creator: article.creator ? {
+              ...article.creator,
+              avatar: article.creator.avatar ? article.creator.avatar : 'default-avatar.jpg'
+            } : null
+          }));
         } else {
-          console.error('收藏文章数据格式错误:', data);
           favorites.value = [];
         }
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('获取收藏文章失败:', response.status, errorData);
         favorites.value = [];
       }
     } catch (error) {
@@ -181,12 +180,10 @@ export function useProfileData() {
   // 获取用户笔记
   const fetchUserNotes = async (userId = null) => {
     try {
-      console.log('fetchUserNotes - 用户ID:', userId);
       const url = userId 
         ? `http://localhost:3000/api/articles/user/${userId}`
         : 'http://localhost:3000/api/articles/user';
       
-      console.log('请求URL:', url);
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -195,15 +192,20 @@ export function useProfileData() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('获取到的文章数据:', data);
         notes.value = data.articles.map(article => ({
           ...article,
-          images: article.images || []
+          images: article.images || [],
+          likeCount: article.likeCount || 0,
+          collectCount: article.collectCount || 0,
+          commentCount: article.commentCount || 0,
+          creator: article.creator ? {
+            ...article.creator,
+            avatar: article.creator.avatar ? article.creator.avatar : 'default-avatar.jpg'
+          } : null
         }));
-        return data.articles; // 返回文章数据
+        return data.articles;
       } else {
         const errorData = await response.json();
-        console.error('获取用户文章失败:', errorData);
         error.value = errorData.message || '获取用户文章失败';
         return [];
       }
@@ -214,8 +216,31 @@ export function useProfileData() {
     }
   };
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = async (tab) => {
     activeTab.value = tab;
+    
+    // 如果是查看自己的主页，根据标签页加载相应数据
+    if (userInfo.value && userInfo.value._id === auth.user?._id) {
+      try {
+        isLoading.value = true;
+        switch (tab) {
+          case 'notes':
+            await fetchUserNotes();
+            break;
+          case 'favorites':
+            await fetchUserFavorites();
+            break;
+          case 'likes':
+            await fetchUserLikes();
+            break;
+        }
+      } catch (error) {
+        console.error('切换标签页加载数据失败:', error);
+        error.value = '加载数据失败';
+      } finally {
+        isLoading.value = false;
+      }
+    }
   };
 
   return {
