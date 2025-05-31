@@ -227,8 +227,13 @@ const uploadAvatar = async (req, res) => {
         // 删除旧头像（如果不是默认头像）
         if (user.avatar !== 'default-avatar.jpg') {
             const oldAvatarPath = path.join(__dirname, '../uploads/avatars', user.avatar);
-            if (fs.existsSync(oldAvatarPath)) {
-                fs.unlinkSync(oldAvatarPath);
+            try {
+                if (fs.existsSync(oldAvatarPath)) {
+                    fs.unlinkSync(oldAvatarPath);
+                }
+            } catch (error) {
+                console.error('删除旧头像失败:', error);
+                // 继续执行，不中断上传流程
             }
         }
 
@@ -236,11 +241,14 @@ const uploadAvatar = async (req, res) => {
         user.avatar = req.file.filename;
         await user.save();
 
+        // 返回完整的头像URL
+        const avatarUrl = `http://localhost:3000/uploads/avatars/${req.file.filename}`;
         res.json({
             message: '头像上传成功',
-            avatar: req.file.filename
+            avatar: avatarUrl
         });
     } catch (error) {
+        console.error('上传头像错误:', error);
         handleError(res, error, '上传头像错误');
     }
 };

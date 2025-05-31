@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 静态文件服务 - 头像
-app.use('/uploads/avatars', express.static('uploads/avatars', {
+app.use('/uploads/avatars', express.static(path.join(__dirname, 'uploads/avatars'), {
     setHeaders: (res, path, stat) => {
         res.set('Access-Control-Allow-Origin', '*');
         res.set('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -40,8 +40,8 @@ app.use('/uploads/avatars', express.static('uploads/avatars', {
     }
 }));
 
-// 静态文件服务 - 文章图片
-app.use('/uploads/images', express.static('uploads/images', {
+// 静态文件服务 - 图片
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images'), {
     setHeaders: (res, path, stat) => {
         res.set('Access-Control-Allow-Origin', '*');
         res.set('Cross-Origin-Resource-Policy', 'cross-origin');
