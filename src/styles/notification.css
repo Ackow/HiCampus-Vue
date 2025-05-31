@@ -138,7 +138,6 @@ body {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    background-color: #DDD; /* 占位符背景 */
 }
 
 .notification-middle {
@@ -165,7 +164,7 @@ body {
 .comment-content {
     font-size: 0.875rem;
     color: #555;
-    background-color: #F0F2F5; /* 评论内容的背景色 */
+    background-color: #f5f5f5; /* 评论内容的背景色 */
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     margin-top: 0.5rem;
@@ -218,12 +217,21 @@ body {
 }
 
 .message-title {
-    font-size: 1.125rem;
+    font-size: 2rem;
     font-weight: bold;
     color: #333;
     margin-bottom: 1.5625rem;
     padding-bottom: 0.625rem;
     border-bottom: 0.0625rem solid #EEE;
+}
+
+.reply-btn {
+    border-radius: 20px;
+}
+
+.reply-icon{
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 /* 响应式设计 */

@@ -6,6 +6,7 @@ const path = require('path');
 const connectDB = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const articleRoutes = require('./routes/articleRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 
 const app = express();
 
@@ -54,8 +55,9 @@ app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')
 connectDB();
 
 // 路由
-app.use('/api', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api', articleRoutes);
+app.use('/api', messageRoutes);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {

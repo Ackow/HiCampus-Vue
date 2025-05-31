@@ -2,6 +2,7 @@ const Article = require('../models/Article');
 const Image = require('../models/Image');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
+const Message = require('../models/Message');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -298,6 +299,21 @@ const addComment = async (req, res) => {
             $inc: { commentCount: 1 }
         });
 
+        // 获取文章信息
+        const article = await Article.findById(articleId);
+        
+        // 创建消息记录（如果评论者不是文章作者）
+        if (req.user.userId.toString() !== article.creator.toString()) {
+            const message = new Message({
+                sender: req.user.userId,
+                receiver: article.creator,
+                type: 'comment',
+                article: articleId,
+                content: content
+            });
+            await message.save();
+        }
+
         // 返回带有评论者信息的评论
         const populatedComment = await Comment.findById(savedComment._id)
             .populate('commenter', 'nickname avatar');
@@ -481,6 +497,17 @@ const likeArticle = async (req, res) => {
             $addToSet: { likes: articleId }
         });
 
+        // 创建消息记录（如果点赞者不是文章作者）
+        if (userId.toString() !== article.creator.toString()) {
+            const message = new Message({
+                sender: userId,
+                receiver: article.creator,
+                type: 'like',
+                article: articleId
+            });
+            await message.save();
+        }
+
         res.json({ 
             message: '点赞成功',
             likeCount: article.likeCount
@@ -574,6 +601,17 @@ const collectArticle = async (req, res) => {
         await User.findByIdAndUpdate(userId, {
             $addToSet: { favorites: articleId }
         });
+
+        // 创建消息记录（如果收藏者不是文章作者）
+        if (userId.toString() !== article.creator.toString()) {
+            const message = new Message({
+                sender: userId,
+                receiver: article.creator,
+                type: 'collect',
+                article: articleId
+            });
+            await message.save();
+        }
 
         res.json({ 
             message: '收藏成功',
