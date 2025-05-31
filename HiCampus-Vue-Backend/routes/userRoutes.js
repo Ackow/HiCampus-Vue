@@ -13,10 +13,10 @@ router.post('/register', userController.register);
 router.post('/login', userController.login);
 
 // 获取用户信息路由
-router.get('/user', authenticateToken, userController.getUserInfo);
+router.get('/', authenticateToken, userController.getUserInfo);
 
 // 获取指定用户信息路由
-router.get('/user/:userId', authenticateToken, userController.getUserById);
+router.get('/:userId', authenticateToken, userController.getUserById);
 
 // 搜索用户路由
 router.get('/users/search', userController.searchUsers);
@@ -25,7 +25,7 @@ router.get('/users/search', userController.searchUsers);
 router.post('/upload/avatar', authenticateToken, upload.single('avatar'), userController.uploadAvatar);
 
 // 更新用户信息路由
-router.put('/user/update', authenticateToken, userController.updateUserInfo);
+router.put('/update', authenticateToken, userController.updateUserInfo);
 
 // 图片上传路由
 router.post('/upload/image', authenticateToken, upload.single('image'), uploadController.uploadImage);

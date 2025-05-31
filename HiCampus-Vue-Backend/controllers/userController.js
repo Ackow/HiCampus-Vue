@@ -162,26 +162,75 @@ const getUserInfo = async (req, res) => {
 // 更新用户信息
 const updateUserInfo = async (req, res) => {
     try {
-        const { nickname, studentId, age, gender, password } = req.body;
+        const { username, nickname, studentId, age, gender, password } = req.body;
         const userId = req.user.userId;
 
         // 构建更新对象
         const updateData = {};
-        if (nickname) updateData.nickname = nickname;
-        if (age) updateData.age = parseInt(age);
-        if (gender) updateData.gender = gender;
-        if (password) updateData.password = await bcrypt.hash(password, 10);
-        
-        // 如果提供了学号，检查是否已被其他用户使用
-        if (studentId) {
-            const existingStudent = await User.findOne({ 
-                studentId, 
+
+        // 处理用户名更新
+        if (username) {
+            if (username.length < 3 || username.length > 20) {
+                return res.status(400).json({ message: '用户名长度必须在3-20个字符之间' });
+            }
+            // 检查用户名是否已被其他用户使用
+            const existingUser = await User.findOne({ 
+                username, 
                 _id: { $ne: userId } 
             });
-            if (existingStudent) {
-                return res.status(400).json({ message: '学号已被其他用户使用' });
+            if (existingUser) {
+                return res.status(400).json({ message: '用户名已被其他用户使用' });
             }
-            updateData.studentId = studentId;
+            updateData.username = username;
+        }
+
+        // 处理昵称更新
+        if (nickname.length > 6) {
+            return res.status(400).json({ message: '昵称长度不能超过6个字符' });
+        }
+        updateData.nickname = nickname;
+
+        // 处理年龄更新
+        if (age) {
+            const ageNum = parseInt(age);
+            if (isNaN(ageNum) || ageNum < 1 || ageNum > 99) {
+                return res.status(400).json({ message: '年龄必须在1-99岁之间' });
+            }
+            updateData.age = ageNum;
+        }
+
+        // 处理性别更新
+        if (gender) {
+            if (!['male', 'female'].includes(gender)) {
+                return res.status(400).json({ message: '性别值无效' });
+            }
+            updateData.gender = gender;
+        }
+
+        // 处理密码更新
+        if (password) {
+            if (password.length < 6) {
+                return res.status(400).json({ message: '密码长度至少为6个字符' });
+            }
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+        
+        // 处理学号更新
+        if (studentId !== undefined) {
+            if (studentId && !/^\d{8,12}$/.test(studentId)) {
+                return res.status(400).json({ message: '学号格式不正确' });
+            }
+            // 检查学号是否已被其他用户使用
+            if (studentId) {
+                const existingStudent = await User.findOne({ 
+                    studentId, 
+                    _id: { $ne: userId } 
+                });
+                if (existingStudent) {
+                    return res.status(400).json({ message: '学号已被其他用户使用' });
+                }
+            }
+            updateData.studentId = studentId || null;
         }
 
         // 更新用户信息
@@ -208,6 +257,7 @@ const updateUserInfo = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('更新用户信息错误:', error);
         handleError(res, error, '更新用户信息错误');
     }
 };

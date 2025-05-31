@@ -20,8 +20,8 @@ export function useProfileData() {
     try {
       console.log('fetchUserInfo - 用户ID:', userId);
       const url = userId 
-        ? `http://localhost:3000/api/user/user/${userId}`
-        : 'http://localhost:3000/api/user/user';
+        ? `http://localhost:3000/api/user/${userId}`
+        : 'http://localhost:3000/api/user';
       
       console.log('请求URL:', url);
       const response = await fetch(url, {
