@@ -67,7 +67,7 @@ export function usePublish() {
     }
     try {
       console.log('搜索用户，查询词:', query)
-      const response = await fetch(`http://localhost:3000/api/users/search?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`http://localhost:3000/api/user/users/search?q=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

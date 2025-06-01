@@ -185,10 +185,12 @@ const updateUserInfo = async (req, res) => {
         }
 
         // 处理昵称更新
-        if (nickname.length > 6) {
+        if (nickname && nickname.length > 6) {
             return res.status(400).json({ message: '昵称长度不能超过6个字符' });
         }
-        updateData.nickname = nickname;
+        if (nickname) {
+            updateData.nickname = nickname;
+        }
 
         // 处理年龄更新
         if (age) {
