@@ -7,7 +7,11 @@
         :class="{ select: currentRoute === '/publish' }" 
         @click.prevent="handlePublishClick"
       >发布</a>
-      <a href="/notification" :class="{ select: currentRoute === '/notification' }" @click.prevent="router.push('/notification')">消息</a>
+      <a 
+        href="/notification" 
+        :class="{ select: currentRoute === '/notification' }" 
+        @click.prevent="handleNotificationClick"
+      >消息</a>
     </div>
   </div>
 </template>
@@ -28,18 +32,33 @@ watch(
   }
 )
 
-// 处理发布按钮点击
-const handlePublishClick = () => {
+// 检查登录状态
+const checkLogin = () => {
   try {
     const token = localStorage?.getItem('token');
     if (!token) {
-      window.alert('请先登录后再发布文章');
-      return;
+      window.alert('请先登录');
+      return false;
     }
-    router.push('/publish');
+    return true;
   } catch (error) {
     console.error('检查登录状态失败:', error);
-    window.alert('请先登录后再发布文章');
+    window.alert('请先登录');
+    return false;
+  }
+}
+
+// 处理发布按钮点击
+const handlePublishClick = () => {
+  if (checkLogin()) {
+    router.push('/publish');
+  }
+}
+
+// 处理消息按钮点击
+const handleNotificationClick = () => {
+  if (checkLogin()) {
+    router.push('/notification');
   }
 }
 </script>

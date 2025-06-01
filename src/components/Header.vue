@@ -15,7 +15,7 @@
           id="searchTriggerButton"
           aria-label="打开搜索框"
           :class="{ hidden: searchActive }"
-          @click.stop="openSearch"
+          @click.stop="handleSearchClick"
           ref="searchTriggerButton"
         >
           <img src="/assets/images/搜索.svg" alt="搜索图标" class="search-trigger-icon">
@@ -153,8 +153,21 @@ const handleProfileClick = () => {
   emit('init-profile');
 }
 
+// 处理搜索按钮点击
+const handleSearchClick = () => {
+  if (!isLoggedIn.value) {
+    window.alert('请先登录后再使用搜索功能');
+    return;
+  }
+  openSearch();
+};
+
 // 处理搜索
 const handleSearch = () => {
+  if (!isLoggedIn.value) {
+    window.alert('请先登录后再使用搜索功能');
+    return;
+  }
   if (searchKeyword.value.trim()) {
     console.log('触发搜索:', searchKeyword.value.trim())
     eventBus.emitSearch(searchKeyword.value.trim())

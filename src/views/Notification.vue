@@ -66,6 +66,7 @@ export default {
           notifications.value = [...notifications.value, ...response.data.messages];
         }
 
+        console.log(response.data);
         hasMore.value = page < response.data.totalPages;
         currentPage.value = page;
       } catch (error) {
@@ -91,7 +92,22 @@ export default {
     // 获取图片URL
     const getImageUrl = (image) => {
       if (!image) return '/default-image.jpg';
-      return `${baseUrl}/uploads/images/${image}`;
+      // 如果图片URL已经包含完整路径，直接返回
+      if (image.startsWith('http')) {
+        return image;
+      }
+      // 如果图片URL包含后缀，直接拼接
+      if (image.includes('.')) {
+        return `${baseUrl}/uploads/images/${image}`;
+      }
+      // 如果图片URL不包含后缀，尝试添加常见图片后缀
+      const extensions = ['.jpg', '.jpeg', '.png', '.gif'];
+      for (const ext of extensions) {
+        const url = `${baseUrl}/uploads/images/${image}${ext}`;
+        // 这里可以添加图片存在性检查
+        return url;
+      }
+      return '/default-image.jpg';
     };
 
     // 标记消息为已读

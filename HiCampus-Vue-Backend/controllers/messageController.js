@@ -16,18 +16,39 @@ const getMessages = async (req, res) => {
             .skip(skip)
             .limit(limit)
             .populate('sender', 'nickname avatar')
-            .populate('article', 'title');
+            .populate('article', 'title')
+            .lean();
+
+        console.log('原始消息数据:', messages.map(msg => ({
+            id: msg._id,
+            articleId: msg.article ? msg.article._id : null,
+            type: msg.type
+        })));
 
         // 获取每篇文章的图片
         const messagesWithImages = await Promise.all(messages.map(async (message) => {
-            const images = await Image.find({ article: message.article._id });
-            const messageObj = message.toObject();
+            let postImage = '';
+            
+            // 只处理有文章ID的消息
+            if (message.article && message.article._id) {
+                console.log('查询文章图片，文章ID:', message.article._id);
+                const images = await Image.find({ article: message.article._id });
+                console.log('查询结果:', images);
+                if (images && images.length > 0) {
+                    postImage = images[0].imageUrl;
+                    console.log('使用的图片URL:', postImage);
+                } else {
+                    console.log('未找到图片');
+                }
+            } else {
+                console.log('文章不存在或没有ID');
+            }
             
             return {
-                ...messageObj,
+                ...message,
                 username: message.sender.nickname,
                 avatar: message.sender.avatar ? message.sender.avatar.split('/').pop() : '',
-                postImage: images.length > 0 ? images[0].imageUrl.split('/').pop() : '',
+                postImage,
                 action: getActionText(message.type),
                 time: formatTime(message.createdAt)
             };
