@@ -26,8 +26,18 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'moderator', 'admin', 'superadmin'],
         default: 'user'
+    },
+    permissions: {
+        canManageUsers: { type: Boolean, default: false },
+        canManageContent: { type: Boolean, default: false },
+        canManageSystem: { type: Boolean, default: false },
+        canViewAnalytics: { type: Boolean, default: false }
+    },
+    isActive: {
+        type: Boolean,
+        default: true
     },
     nickname: { 
         type: String, 
@@ -104,6 +114,44 @@ userSchema.pre('save', async function(next) {
             this.password = await bcrypt.hash(this.password, salt);
             console.log('加密后的密码:', this.password);
         }
+
+        // 根据角色自动设置权限
+        if (this.isModified('role')) {
+            switch (this.role) {
+                case 'superadmin':
+                    this.permissions = {
+                        canManageUsers: true,
+                        canManageContent: true,
+                        canManageSystem: true,
+                        canViewAnalytics: true
+                    };
+                    break;
+                case 'admin':
+                    this.permissions = {
+                        canManageUsers: true,
+                        canManageContent: true,
+                        canManageSystem: false,
+                        canViewAnalytics: true
+                    };
+                    break;
+                case 'moderator':
+                    this.permissions = {
+                        canManageUsers: false,
+                        canManageContent: true,
+                        canManageSystem: false,
+                        canViewAnalytics: false
+                    };
+                    break;
+                default:
+                    this.permissions = {
+                        canManageUsers: false,
+                        canManageContent: false,
+                        canManageSystem: false,
+                        canViewAnalytics: false
+                    };
+            }
+        }
+
         console.log('pre save hook 执行完成');
         next();
     } catch (error) {
@@ -111,11 +159,6 @@ userSchema.pre('save', async function(next) {
         next(error);
     }
 });
-
-// 添加索引
-userSchema.index({ username: 1 });
-userSchema.index({ studentId: 1 });
-userSchema.index({ nickname: 1 });
 
 // 验证密码方法
 userSchema.methods.comparePassword = async function(candidatePassword) {
@@ -125,6 +168,16 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     const result = await bcrypt.compare(candidatePassword, this.password);
     console.log('密码比较结果:', result);
     return result;
+};
+
+// 检查权限方法
+userSchema.methods.hasPermission = function(permission) {
+    return this.permissions[permission] || false;
+};
+
+// 检查是否为管理员
+userSchema.methods.isAdmin = function() {
+    return ['admin', 'superadmin'].includes(this.role);
 };
 
 module.exports = mongoose.model('User', userSchema); 

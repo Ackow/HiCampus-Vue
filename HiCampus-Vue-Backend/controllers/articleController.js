@@ -371,8 +371,8 @@ const deleteComment = async (req, res) => {
             return res.status(404).json({ message: '用户不存在' });
         }
 
-        // 验证权限（评论作者或管理员可以删除）
-        if (comment.commenter.toString() !== userId && user.role !== 'admin') {
+        // 验证权限（评论作者、管理员或超级管理员可以删除）
+        if (comment.commenter.toString() !== userId && !['admin', 'superadmin'].includes(user.role)) {
             return res.status(403).json({ message: '没有权限删除此评论' });
         }
 
@@ -808,8 +808,8 @@ const deleteArticle = async (req, res) => {
             return res.status(404).json({ message: '用户不存在' });
         }
 
-        // 验证权限（文章作者或管理员可以删除）
-        if (article.creator.toString() !== userId && user.role !== 'admin') {
+        // 验证权限（文章作者、管理员或超级管理员可以删除）
+        if (article.creator.toString() !== userId && !['admin', 'superadmin'].includes(user.role)) {
             return res.status(403).json({ message: '没有权限删除此文章' });
         }
 
