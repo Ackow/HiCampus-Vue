@@ -29,14 +29,10 @@ const getMessages = async (req, res) => {
         const messagesWithImages = await Promise.all(messages.map(async (message) => {
             let postImage = '';
             
-            // 只处理有文章ID的消息
             if (message.article && message.article._id) {
-                console.log('查询文章图片，文章ID:', message.article._id);
                 const images = await Image.find({ article: message.article._id });
-                console.log('查询结果:', images);
                 if (images && images.length > 0) {
                     postImage = images[0].imageUrl;
-                    console.log('使用的图片URL:', postImage);
                 } else {
                     console.log('未找到图片');
                 }

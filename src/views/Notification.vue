@@ -1,10 +1,25 @@
 <template>
   <div class="content-container">
     <div class="messages-main">
-      <div class="message-title">我的消息</div>
+      <div class="message-header">
+        <div class="message-title">我的消息</div>
+        <button 
+          v-if="hasUnreadMessages" 
+          class="mark-all-read-btn" 
+          @click="handleMarkAllAsRead"
+          :disabled="markingAllAsRead"
+        >
+          {{ markingAllAsRead ? '标记中...' : '全部已读' }}
+        </button>
+      </div>
 
       <div class="notifications-list">
-        <div class="notification-item" v-for="(notification, index) in notifications" :key="index">
+        <div 
+          class="notification-item" 
+          v-for="(notification, index) in notifications" 
+          :key="index"
+          :class="{ 'unread': !notification.isRead }"
+        >
           <div class="notification-left">
             <img :src="getAvatarUrl(notification.avatar)" alt="用户头像" class="user-avatar">
           </div>
@@ -34,7 +49,8 @@
 
 <script>
 import axios from 'axios';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { eventBus } from '../utils/eventBus.js';
 
 export default {
   name: 'Notification',
@@ -43,7 +59,13 @@ export default {
     const currentPage = ref(1);
     const hasMore = ref(true);
     const loading = ref(false);
+    const markingAllAsRead = ref(false);
     const baseUrl = 'http://localhost:3000';
+
+    // 计算是否有未读消息
+    const hasUnreadMessages = computed(() => {
+      return notifications.value.some(notification => !notification.isRead);
+    });
 
     // 获取消息列表
     const fetchMessages = async (page = 1) => {
@@ -73,6 +95,25 @@ export default {
         console.error('获取消息失败:', error);
       } finally {
         loading.value = false;
+      }
+    };
+
+    // 处理全部已读
+    const handleMarkAllAsRead = async () => {
+      try {
+        markingAllAsRead.value = true;
+        await markAllAsRead();
+        // 更新本地消息状态
+        notifications.value = notifications.value.map(notification => ({
+          ...notification,
+          isRead: true
+        }));
+        // 触发未读消息数量更新事件
+        eventBus.emit('updateUnreadCount', 0);
+      } catch (error) {
+        console.error('标记全部已读失败:', error);
+      } finally {
+        markingAllAsRead.value = false;
       }
     };
 
@@ -119,6 +160,12 @@ export default {
             Authorization: `Bearer ${token}`
           }
         });
+        // 更新本地消息状态
+        notifications.value = notifications.value.map(notification => 
+          notification._id === messageId ? { ...notification, isRead: true } : notification
+        );
+        // 触发未读消息数量更新事件
+        eventBus.emit('updateUnreadCount');
       } catch (error) {
         console.error('标记已读失败:', error);
       }
@@ -162,11 +209,14 @@ export default {
       notifications,
       hasMore,
       loading,
+      markingAllAsRead,
+      hasUnreadMessages,
       loadMore,
       getAvatarUrl,
       getImageUrl,
       markAsRead,
       markAllAsRead,
+      handleMarkAllAsRead,
       getUnreadCount
     };
   }
@@ -175,6 +225,41 @@ export default {
 
 <style scoped>
 @import '../styles/notification.css';
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.mark-all-read-btn {
+  background-color: #f0f2f5;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.mark-all-read-btn:hover {
+  background-color: #e4e6eb;
+}
+
+.mark-all-read-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.notification-item {
+  transition: background-color 0.3s ease;
+}
+
+.notification-item.unread {
+  background-color: #f0f7ff;
+}
 
 .load-more {
   text-align: center;
