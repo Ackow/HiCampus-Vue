@@ -19,12 +19,6 @@ const getMessages = async (req, res) => {
             .populate('article', 'title')
             .lean();
 
-        console.log('原始消息数据:', messages.map(msg => ({
-            id: msg._id,
-            articleId: msg.article ? msg.article._id : null,
-            type: msg.type
-        })));
-
         // 获取每篇文章的图片
         const messagesWithImages = await Promise.all(messages.map(async (message) => {
             let postImage = '';

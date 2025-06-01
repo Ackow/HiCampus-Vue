@@ -48,6 +48,16 @@
                 <div class="post-text-content">
                   <p class="post-title">{{ postDetail.title }}</p>
                   <p class="post-description">{{ postDetail.description }}</p>
+                  <div class="post-tags" v-if="postDetail.topics && postDetail.topics.length > 0">
+                    <span 
+                      v-for="(topic, index) in postDetail.topics" 
+                      :key="index" 
+                      class="tag"
+                      :class="{ 'complaint-tag': topic === '#吐槽区' }"
+                    >
+                      {{ topic }}
+                    </span>
+                  </div>
                 </div>
 
                 <div class="comments-section">
@@ -319,4 +329,34 @@ const handleUserInfoClick = async (event, isComment = false, comment = null) => 
 
 <style scoped>
 @import '../styles/postDetail.css';
+
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag {
+  background-color: #f0f2f5;
+  color: #666;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.tag:hover {
+  background-color: #e4e6eb;
+}
+
+.complaint-tag {
+  background-color: #fff2f0;
+  color: #ff4d4f;
+  border: 1px solid #ffccc7;
+}
+
+.complaint-tag:hover {
+  background-color: #fff1f0;
+}
 </style> 

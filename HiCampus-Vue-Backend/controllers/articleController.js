@@ -373,28 +373,53 @@ const deleteComment = async (req, res) => {
 // 获取用户发布的文章
 const getUserArticles = async (req, res) => {
     try {
+        console.log('开始获取用户文章，用户ID:', req.user.userId);
+        
+        // 验证用户ID
+        if (!req.user || !req.user.userId) {
+            console.error('用户未登录或用户ID不存在');
+            return res.status(401).json({ message: '用户未登录' });
+        }
+
         const articles = await Article.find({ creator: req.user.userId })
             .sort({ createdAt: -1 })
             .populate('creator', 'nickname avatar');
 
+        console.log('找到文章数量:', articles.length);
+
         // 获取每篇文章的图片
         const articlesWithImages = await Promise.all(articles.map(async (article) => {
-            const images = await Image.find({ article: article._id });
-            return {
-                ...article.toObject(),
-                images: images.map(img => img.imageUrl.split('/').pop()),
-                creator: article.creator ? {
-                    ...article.creator.toObject(),
-                    avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
-                } : null,
-                isLiked: article.likedBy.includes(req.user.userId)
-            };
+            try {
+                const images = await Image.find({ article: article._id });
+                const articleObj = article.toObject();
+                
+                return {
+                    ...articleObj,
+                    images: images.map(img => img.imageUrl.split('/').pop()),
+                    creator: article.creator ? {
+                        ...article.creator.toObject(),
+                        avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
+                    } : null,
+                    isLiked: articleObj.likedBy ? articleObj.likedBy.includes(req.user.userId) : false,
+                    isCollected: articleObj.collectedBy ? articleObj.collectedBy.includes(req.user.userId) : false
+                };
+            } catch (error) {
+                console.error('处理文章图片时出错:', error);
+                return null;
+            }
         }));
 
-        res.json({ articles: articlesWithImages });
+        // 过滤掉处理失败的文章
+        const validArticles = articlesWithImages.filter(article => article !== null);
+        console.log('成功处理文章数量:', validArticles.length);
+
+        res.json({ articles: validArticles });
     } catch (err) {
         console.error('获取用户文章错误:', err);
-        res.status(500).json({ message: '服务器错误' });
+        res.status(500).json({ 
+            message: '服务器错误',
+            error: err.message 
+        });
     }
 };
 
@@ -424,13 +449,12 @@ const getUserFavorites = async (req, res) => {
                     ...article.creator.toObject(),
                     avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
                 } : null,
-                isLiked: article.likedBy.includes(req.user.userId),
+                isLiked: article.likedBy ? article.likedBy.includes(req.user.userId) : false,
                 isCollected: true,
                 collectCount: article.collectCount || 0
             };
         }));
 
-        console.log('获取到的收藏文章数量:', articlesWithImages.length);
         res.json({ articles: articlesWithImages });
     } catch (err) {
         console.error('获取用户收藏错误:', err);
@@ -450,6 +474,10 @@ const getUserLikes = async (req, res) => {
                 }
             });
 
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
         // 获取每篇文章的图片
         const articlesWithImages = await Promise.all(user.likes.map(async (article) => {
             const images = await Image.find({ article: article._id });
@@ -457,6 +485,7 @@ const getUserLikes = async (req, res) => {
                 ...article.toObject(),
                 images: images.map(img => img.imageUrl.split('/').pop()),
                 isLiked: true, // 从用户点赞列表获取的文章一定是已点赞的
+                isCollected: article.collectedBy ? article.collectedBy.includes(req.user.userId) : false,
                 creator: article.creator ? {
                     ...article.creator.toObject(),
                     avatar: article.creator.avatar ? article.creator.avatar.split('/').pop() : 'default-avatar.jpg'
@@ -862,6 +891,49 @@ const getUserArticlesById = async (req, res) => {
     }
 };
 
+// 获取单个文章详情
+const getArticleById = async (req, res) => {
+    try {
+        const { articleId } = req.params;
+        const article = await Article.findById(articleId)
+            .populate('creator', 'nickname avatar');
+
+        if (!article) {
+            return res.status(404).json({ message: '文章不存在' });
+        }
+
+        // 获取文章图片
+        const images = await Image.find({ article: articleId });
+        
+        // 获取文章评论
+        const comments = await Comment.find({ article: articleId })
+            .populate('commenter', 'nickname avatar')
+            .sort({ createdAt: -1 });
+
+        const articleObj = article.toObject();
+        
+        // 添加图片信息
+        articleObj.images = images.map(img => img.imageUrl.split('/').pop());
+        
+        // 添加评论信息
+        articleObj.comments = comments.map(comment => ({
+            ...comment.toObject(),
+            creator: comment.commenter // 重命名为 creator 以匹配前端期望
+        }));
+        
+        // 如果用户已登录，检查点赞和收藏状态
+        if (req.user) {
+            articleObj.isLiked = article.likedBy.includes(req.user.userId);
+            articleObj.isCollected = article.collectedBy.includes(req.user.userId);
+        }
+
+        res.json(articleObj);
+    } catch (error) {
+        console.error('获取文章详情失败:', error);
+        res.status(500).json({ message: '获取文章详情失败' });
+    }
+};
+
 module.exports = {
     createArticle,
     getArticles,
@@ -881,5 +953,6 @@ module.exports = {
     uncollectArticle,
     getCollectStatus,
     searchArticles,
-    deleteArticle
+    deleteArticle,
+    getArticleById
 }; 

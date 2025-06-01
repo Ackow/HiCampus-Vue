@@ -19,6 +19,7 @@
           v-for="(notification, index) in notifications" 
           :key="index"
           :class="{ 'unread': !notification.isRead }"
+          @click="handleNotificationClick(notification)"
         >
           <div class="notification-left">
             <img :src="getAvatarUrl(notification.avatar)" alt="用户头像" class="user-avatar">
@@ -45,15 +46,31 @@
       </div>
     </div>
   </div>
+
+  <!-- 添加文章详情组件 -->
+  <PostDetail
+    v-if="selectedPost"
+    :show="!!selectedPost"
+    :postDetail="selectedPost"
+    @close="closePostDetail"
+    @toggle-like="handleLikeToggle"
+    @comment-added="handleCommentAdded"
+    @update-like-count="handleLikeCountUpdate"
+    @updateCollectCount="handleCollectCountUpdate"
+  />
 </template>
 
 <script>
 import axios from 'axios';
 import { ref, onMounted, computed } from 'vue';
 import { eventBus } from '../utils/eventBus.js';
+import PostDetail from './PostDetail.vue';
 
 export default {
   name: 'Notification',
+  components: {
+    PostDetail
+  },
   setup() {
     const notifications = ref([]);
     const currentPage = ref(1);
@@ -61,6 +78,7 @@ export default {
     const loading = ref(false);
     const markingAllAsRead = ref(false);
     const baseUrl = 'http://localhost:3000';
+    const selectedPost = ref(null);
 
     // 计算是否有未读消息
     const hasUnreadMessages = computed(() => {
@@ -201,6 +219,77 @@ export default {
       }
     };
 
+    // 处理消息点击
+    const handleNotificationClick = async (notification) => {
+      try {
+        // 如果消息未读，先标记为已读
+        if (!notification.isRead) {
+          await markAsRead(notification._id);
+        }
+
+        // 获取文章详情
+        const token = localStorage.getItem('token');
+        const articleId = typeof notification.article === 'object' ? notification.article._id : notification.article;
+        const response = await axios.get(`${baseUrl}/api/articles/${articleId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        // 设置选中的文章
+        const article = response.data;
+        selectedPost.value = {
+          id: article._id,
+          username: article.creator.nickname,
+          avatar: getAvatarUrl(article.creator.avatar),
+          title: article.title,
+          description: article.content,
+          images: article.images ? article.images.map(img => `${baseUrl}/uploads/images/${img}`) : [],
+          likeCount: article.likeCount || 0,
+          collectCount: article.collectCount || 0,
+          commentCount: article.commentCount || 0,
+          isLiked: article.isLiked || false,
+          isCollected: article.isCollected || false,
+          topics: article.topics || [],
+          creatorId: article.creator._id,
+          comments: article.comments || []
+        };
+      } catch (error) {
+        console.error('获取文章详情失败:', error);
+      }
+    };
+
+    // 关闭文章详情
+    const closePostDetail = () => {
+      selectedPost.value = null;
+    };
+
+    // 处理点赞状态变化
+    const handleLikeToggle = (isLiked) => {
+      if (selectedPost.value) {
+        selectedPost.value.isLiked = isLiked;
+      }
+    };
+
+    // 处理评论添加
+    const handleCommentAdded = () => {
+      // 可以在这里处理评论添加后的逻辑
+    };
+
+    // 处理点赞数更新
+    const handleLikeCountUpdate = (count) => {
+      if (selectedPost.value) {
+        selectedPost.value.likeCount = count;
+      }
+    };
+
+    // 处理收藏数更新
+    const handleCollectCountUpdate = (count) => {
+      if (selectedPost.value) {
+        selectedPost.value.collectCount = count;
+      }
+    };
+
     onMounted(() => {
       fetchMessages();
     });
@@ -217,7 +306,14 @@ export default {
       markAsRead,
       markAllAsRead,
       handleMarkAllAsRead,
-      getUnreadCount
+      getUnreadCount,
+      selectedPost,
+      handleNotificationClick,
+      closePostDetail,
+      handleLikeToggle,
+      handleCommentAdded,
+      handleLikeCountUpdate,
+      handleCollectCountUpdate
     };
   }
 };
@@ -254,11 +350,16 @@ export default {
 }
 
 .notification-item {
+  cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.notification-item.unread {
-  background-color: #f0f7ff;
+.notification-item:hover {
+  background-color: #f5f5f5;
+}
+
+.notification-item.unread:hover {
+  background-color: #e6f7ff;
 }
 
 .load-more {
