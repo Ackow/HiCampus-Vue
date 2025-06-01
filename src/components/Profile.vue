@@ -279,11 +279,22 @@ watch(activeTab, async (newTab) => {
   }
 });
 
+// 修改 isCurrentUser 计算属性
+const isCurrentUser = computed(() => {
+  const currentUser = auth.getUserInfo();
+  const viewedUserId = route.params.userId;
+  console.log('当前用户信息:', currentUser);
+  console.log('当前用户ID:', currentUser?._id);
+  console.log('查看的用户ID:', viewedUserId);
+  return !viewedUserId || currentUser?._id === viewedUserId;
+});
+
 // 加载用户数据
 const loadUserData = async () => {
   try {
     isLoading.value = true;
     const userId = route.params.userId;
+    console.log('loadUserData - 路由参数userId:', userId);
     
     if (userId) {
       // 查看其他用户的个人主页
@@ -320,7 +331,6 @@ const loadUserData = async () => {
 
 // 监听路由参数变化
 watch(() => route.params.userId, async (newUserId, oldUserId) => {
-  console.log('路由参数变化，新的用户ID:', newUserId, '旧的用户ID:', oldUserId);
   if (newUserId !== oldUserId) {
     // 重置状态
     userInfo.value = null;
@@ -333,15 +343,6 @@ watch(() => route.params.userId, async (newUserId, oldUserId) => {
     await loadUserData();
   }
 }, { immediate: true });
-
-// 修改 isCurrentUser 计算属性
-const isCurrentUser = computed(() => {
-  const currentUserId = auth.user?._id;
-  const viewedUserId = route.params.userId;
-  console.log('当前用户ID:', currentUserId);
-  console.log('查看的用户ID:', viewedUserId);
-  return !viewedUserId || currentUserId === viewedUserId;
-});
 
 onMounted(async () => {
   console.log('Profile组件挂载');

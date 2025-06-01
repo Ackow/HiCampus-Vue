@@ -18,12 +18,10 @@ export function useProfileData() {
   // 获取用户信息
   const fetchUserInfo = async (userId = null) => {
     try {
-      console.log('fetchUserInfo - 用户ID:', userId);
       const url = userId 
         ? `http://localhost:3000/api/user/${userId}`
         : 'http://localhost:3000/api/user';
       
-      console.log('请求URL:', url);
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -32,9 +30,15 @@ export function useProfileData() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('获取到的用户数据:', data);
-        userInfo.value = data.user;
-        return data.user; // 返回用户数据
+        if (data.user) {
+          // 确保用户数据包含 _id 字段
+          const userData = {
+            ...data.user,
+            _id: data.user.id
+          };
+          userInfo.value = userData;
+          return userData;
+        }
       } else {
         const errorData = await response.json();
         console.error('获取用户信息失败:', errorData);
@@ -49,21 +53,37 @@ export function useProfileData() {
   };
 
   const getNotesByTab = computed(() => {
+    const currentUser = auth.getUserInfo();
+
     // 如果正在查看其他用户，只返回笔记
-    if (userInfo.value && userInfo.value._id !== auth.user?._id) {
+    if (userInfo.value && userInfo.value._id !== currentUser?._id) {
+      console.log('getNotesByTab - 查看其他用户的笔记');
       return notes.value;
     }
     
     // 查看自己的主页时，根据标签页返回不同内容
+    console.log('getNotesByTab - 查看自己的笔记');
     switch (activeTab.value) {
       case 'notes':
-        return notes.value;
+        return notes.value.map(note => {
+          const isLiked = note.likedBy ? note.likedBy.includes(currentUser?._id) : false;
+          return {
+            ...note,
+            isLiked
+          };
+        });
       case 'favorites':
         return favorites.value;
       case 'likes':
         return likes.value;
       default:
-        return notes.value;
+        return notes.value.map(note => {
+          const isLiked = note.likedBy ? note.likedBy.includes(currentUser?._id) : false;
+          return {
+            ...note,
+            isLiked
+          };
+        });
     }
   });
 
@@ -198,6 +218,8 @@ export function useProfileData() {
           likeCount: article.likeCount || 0,
           collectCount: article.collectCount || 0,
           commentCount: article.commentCount || 0,
+          likedBy: article.likedBy || [],
+          collectedBy: article.collectedBy || [],
           creator: article.creator ? {
             ...article.creator,
             avatar: article.creator.avatar ? article.creator.avatar : 'default-avatar.jpg'

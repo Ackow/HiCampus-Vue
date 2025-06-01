@@ -27,7 +27,7 @@ export function useAuth() {
   let updateUICallback = null;
 
   const token = ref(localStorage.getItem('token'))
-  const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
+  const user = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
 
   // 设置回调函数
   const setUpdateUICallback = (callback) => {
@@ -201,37 +201,50 @@ export function useAuth() {
 
   // 获取用户信息
   const getUserInfo = () => {
-    return JSON.parse(localStorage.getItem('userInfo') || 'null')
+    const userData = user.value;
+    if (userData) {
+      // 确保返回的用户数据包含 _id 字段
+      return {
+        ...userData,
+        _id: userData.id
+      };
+    }
+    return null;
   }
 
   // 设置用户信息
   const setUserInfo = (info) => {
-    userInfo.value = info
-    localStorage.setItem('userInfo', JSON.stringify(info))
+    // 确保存储的用户数据包含 _id 字段
+    const userData = {
+      ...info,
+      _id: info.id
+    };
+    user.value = userData;
+    localStorage.setItem('userInfo', JSON.stringify(userData));
   }
 
   // 清除认证信息
   const clearAuth = () => {
-    token.value = null
-    userInfo.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
+    token.value = null;
+    user.value = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
   }
 
   // 检查是否已登录
   const isAuthenticated = () => {
-    return !!getToken()
+    return !!getToken();
   }
 
   // 退出登录
   const logout = () => {
     // 清除所有本地存储
-    localStorage.removeItem('isLoggedIn')
-    localStorage.removeItem('token')
-    localStorage.removeItem('userInfo')
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
     
     // 更新UI状态
-    updateUI(false)
+    updateUI(false);
     
     // 退出登录后，触发用户信息更新事件
     const userInfo = getUserInfo();
@@ -245,7 +258,7 @@ export function useAuth() {
     }
     
     // 导航到首页
-    router.push('/')
+    router.push('/');
   }
 
   return {
@@ -265,7 +278,7 @@ export function useAuth() {
     setUpdateUICallback,
     updateUI,
     token,
-    userInfo,
+    user,
     getToken,
     setToken,
     setUserInfo,
