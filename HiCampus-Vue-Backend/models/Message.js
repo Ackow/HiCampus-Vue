@@ -13,7 +13,7 @@ const messageSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['like', 'comment', 'collect'],
+        enum: ['like', 'comment', 'collect', 'mention'],
         required: true
     },
     article: {

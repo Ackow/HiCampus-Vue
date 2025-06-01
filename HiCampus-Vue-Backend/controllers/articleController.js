@@ -163,7 +163,7 @@ const getMentionedArticles = async (req, res) => {
 // 创建文章
 const createArticle = async (req, res) => {
     try {
-        const { title, content, images, mentionedUsers, topics } = req.body;
+        const { title, content, images, mentions, topics } = req.body;
         
         // 验证必要字段
         if (!title || !content) {
@@ -182,14 +182,14 @@ const createArticle = async (req, res) => {
             });
         }
 
-        // console.log('创建文章数据:', {
-        //     creator: req.user.userId,
-        //     title,
-        //     content,
-        //     imagesCount: images ? images.length : 0,
-        //     mentionedUsersCount: mentionedUsers ? mentionedUsers.length : 0,
-        //     topicsCount: topics ? topics.length : 0
-        // });
+        console.log('创建文章数据:', {
+            creator: req.user.userId,
+            title,
+            content,
+            imagesCount: images ? images.length : 0,
+            mentionsCount: mentions ? mentions.length : 0,
+            topicsCount: topics ? topics.length : 0
+        });
 
         // 创建文章
         const article = new Article({
@@ -198,7 +198,7 @@ const createArticle = async (req, res) => {
             content,
             likeCount: 0,
             commentCount: 0,
-            mentionedUsers: mentionedUsers || [],
+            mentionedUsers: mentions || [],
             topics: topics || []
         });
 
@@ -222,6 +222,27 @@ const createArticle = async (req, res) => {
             } catch (imageError) {
                 console.error('图片记录保存失败:', imageError);
                 // 即使图片保存失败，也返回文章创建成功
+            }
+        }
+
+        // 处理艾特消息
+        if (mentions && mentions.length > 0) {
+            try {
+                const messagePromises = mentions.map(receiverId => {
+                    const message = new Message({
+                        sender: req.user.userId,
+                        receiver: receiverId,
+                        type: 'mention',
+                        article: savedArticle._id
+                    });
+                    return message.save();
+                });
+
+                await Promise.all(messagePromises);
+                console.log('艾特消息创建成功');
+            } catch (messageError) {
+                console.error('艾特消息创建失败:', messageError);
+                // 即使消息创建失败，也返回文章创建成功
             }
         }
 

@@ -10,28 +10,37 @@ const getMessages = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
+        console.log('获取消息列表，用户ID:', userId);
+
         // 获取消息列表
         const messages = await Message.find({ receiver: userId })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .populate('sender', 'nickname avatar')
-            .populate('article', 'title')
+            .populate('article', 'title images')
             .lean();
+
+        console.log('查询到的消息数量:', messages.length);
 
         // 获取每篇文章的图片
         const messagesWithImages = await Promise.all(messages.map(async (message) => {
             let postImage = '';
             
             if (message.article && message.article._id) {
-                const images = await Image.find({ article: message.article._id });
-                if (images && images.length > 0) {
-                    postImage = images[0].imageUrl;
-                } else {
-                    console.log('未找到图片');
+                try {
+                    const images = await Image.find({ article: message.article._id });
+                    if (images && images.length > 0) {
+                        postImage = images[0].imageUrl;
+                        console.log('找到文章图片:', postImage);
+                    } else {
+                        console.log('文章没有图片:', message.article._id);
+                    }
+                } catch (error) {
+                    console.error('获取文章图片失败:', error);
                 }
             } else {
-                console.log('文章不存在或没有ID');
+                console.log('消息没有关联文章或文章ID无效');
             }
             
             return {
@@ -46,6 +55,7 @@ const getMessages = async (req, res) => {
 
         // 获取消息总数
         const total = await Message.countDocuments({ receiver: userId });
+        console.log('消息总数:', total);
 
         res.json({
             messages: messagesWithImages,
@@ -127,6 +137,8 @@ const getActionText = (type) => {
             return '评论了你的帖子。';
         case 'collect':
             return '收藏了你的帖子。';
+        case 'mention':
+            return '在帖子中提到了你。';
         default:
             return '';
     }

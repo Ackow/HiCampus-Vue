@@ -23,6 +23,7 @@
         >
           <div class="notification-left">
             <img :src="getAvatarUrl(notification.avatar)" alt="用户头像" class="user-avatar">
+            <div v-if="!notification.isRead" class="unread-dot"></div>
           </div>
           <div class="notification-middle">
             <div class="notification-text">
@@ -322,69 +323,5 @@ export default {
 <style scoped>
 @import '../styles/notification.css';
 
-.message-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
 
-.mark-all-read-btn {
-  background-color: #f0f2f5;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-  transition: all 0.3s ease;
-}
-
-.mark-all-read-btn:hover {
-  background-color: #e4e6eb;
-}
-
-.mark-all-read-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.notification-item {
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.notification-item:hover {
-  background-color: #f5f5f5;
-}
-
-.notification-item.unread:hover {
-  background-color: #e6f7ff;
-}
-
-.load-more {
-  text-align: center;
-  margin-top: 20px;
-  padding: 10px;
-}
-
-.load-more button {
-  background-color: #f0f2f5;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-  transition: all 0.3s ease;
-}
-
-.load-more button:hover {
-  background-color: #e4e6eb;
-}
-
-.load-more button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
 </style> 

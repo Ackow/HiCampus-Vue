@@ -220,9 +220,11 @@ export function usePublish() {
       // 添加艾特用户和话题信息
       const articleWithMentionsAndTopics = {
         ...articleData,
-        mentions: mentions.value.map(m => m.id), // 只发送用户ID
+        mentions: mentions.value.map(m => m.id), // 确保只发送用户ID
         topics: topics.value
       }
+
+      console.log('准备发送的文章数据:', articleWithMentionsAndTopics);
 
       const response = await fetch('http://localhost:3000/api/articles', {
         method: 'POST',
@@ -238,10 +240,13 @@ export function usePublish() {
         throw new Error(errorData.message || '文章发布失败')
       }
 
-      return await response.json()
+      const result = await response.json()
+      console.log('文章创建成功，返回数据:', result);
+
+      return result;
     } catch (error) {
-      console.error('文章发布错误:', error)
-      throw error
+      console.error('文章发布错误:', error);
+      throw error;
     }
   }
 
