@@ -249,6 +249,11 @@ body {
     align-items: center;
 }
 
+.input-icon-img {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
 .password-toggle {
     position: absolute;
     right: 1.25rem;

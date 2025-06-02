@@ -16,17 +16,19 @@
             <div class="input-group">
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M3 7l9 6 9-6"/></svg>
+                  <img src="/assets/images/用户名.svg" alt="用户图标"  class="input-icon-img"/>
                 </span>
                 <input v-model="loginForm.username" type="text" name="username" placeholder="请输入用户名" required />
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="8" rx="4"/><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <img src="/assets/images/密码.svg" alt="密码"  class="input-icon-img"/>
                 </span>
                 <input :type="showPassword ? 'text' : 'password'" v-model="loginForm.password" name="password" placeholder="请输入密码" required />
                 <span class="password-toggle" data-target="password" @click="togglePassword">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <img :src="showPassword ? '/assets/images/不显示.svg' : '/assets/images/显示.svg'" 
+                       :alt="showPassword ? '隐藏' : '显示'" 
+                       class="input-icon-img"/>
                 </span>
               </div>
             </div>
@@ -39,19 +41,19 @@
             <div class="input-group">
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M3 7l9 6 9-6"/></svg>
+                  <img src="/assets/images/用户名.svg" alt="用户图标"  class="input-icon-img"/>
                 </span>
                 <input v-model="registerForm.username" type="text" name="username" placeholder="请输入用户名" required />
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <img src="/assets/images/用户名.svg" alt="用户图标"  class="input-icon-img"/>
                 </span>
                 <input v-model="registerForm.nickname" type="text" name="nickname" placeholder="请输入昵称" required />
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                  <img src="/assets/images/学号.svg" alt="学号图标"  class="input-icon-img"/>
                 </span>
                 <input 
                   v-model="registerForm.studentId" 
@@ -66,20 +68,23 @@
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-                </span>
+                  <img src="/assets/images/密码.svg" alt="密码"  class="input-icon-img"/>                </span>
                 <input :type="showPassword ? 'text' : 'password'" v-model="registerForm.password" name="password" placeholder="请输入密码" required />
                 <span class="password-toggle" data-target="password" @click="togglePassword">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <img :src="showPassword ? '/assets/images//不显示.svg' : '/assets/images/显示.svg'" 
+                       :alt="showPassword ? '隐藏' : '显示'" 
+                       class="input-icon-img"/>
                 </span>
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                  <img src="/assets/images/密码.svg" alt="密码"  class="input-icon-img"/>                
                 </span>
                 <input :type="showConfirmPassword ? 'text' : 'password'" v-model="registerForm.confirmPassword" name="confirmPassword" placeholder="请确认密码" required />
                 <span class="password-toggle" data-target="confirmPassword" @click="toggleConfirmPassword">
-                  <svg width="24" height="24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <img :src="showConfirmPassword ? '/assets/images/不显示.svg' : '/assets/images/显示.svg'" 
+                       :alt="showConfirmPassword ? '隐藏' : '显示'" 
+                       class="input-icon-img"/>
                 </span>
               </div>
             </div>

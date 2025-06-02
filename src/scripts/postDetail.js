@@ -27,7 +27,7 @@ export function usePostDetail(props, emit) {
   const checkPermission = () => {
     const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
     isAuthor.value = currentUser.id === props.postDetail.creatorId
-    isAdmin.value = currentUser.role === 'admin'
+    isAdmin.value = currentUser.role === 'admin' || currentUser.role === 'superadmin'
   }
 
   // 检查是否已登录
@@ -265,8 +265,13 @@ export function usePostDetail(props, emit) {
     }
   }
 
+  // 判断是否是评论作者
   const isCommentAuthor = (comment) => {
     const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}')
+    // 如果是管理员或超级管理员，也可以删除评论
+    if (currentUser.role === 'admin' || currentUser.role === 'superadmin') {
+      return true
+    }
     return currentUser.id === comment.commenter._id
   }
 
