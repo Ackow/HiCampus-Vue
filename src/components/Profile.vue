@@ -19,7 +19,7 @@
             <div class="profile-student-id">学号：{{ userInfo.studentId || '未设置' }}</div>
           </div>
           <div class="profile-tags">
-            <img :src="userInfo.gender === 'male' ? '/assets/images/男.svg' : '/assets/images/女.svg'" alt="性别" class="profile-gender">
+            <img :src="userInfo.gender === 'male' ? './assets/images/男.svg' : './assets/images/女.svg'" alt="性别" class="profile-gender">
             <span class="profile-age">{{ userInfo.age }}岁</span>
           </div>
         </div>
@@ -52,7 +52,7 @@
           <div class="note-title">{{ note.title }}</div>
           <div class="note-meta">
             <span class="note-like">
-              <img :src="note.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+              <img :src="note.isLiked ? './assets/images/爱心-红.svg' : './assets/images/爱心.svg'" 
                    :alt="note.isLiked ? '已点赞' : '未点赞'" 
                    class="note-like-icon"
                    :class="{ 'liked': note.isLiked }">

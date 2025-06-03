@@ -148,8 +148,8 @@
           <button class="remove-tag" @click="removeMention(user.id)">×</button>
         </div>
       </div>
-
-      <div class="settings-row">
+  
+      <!-- <div class="settings-row">
         <div class="setting-item">
           <img src="/assets/images/锁定.svg" alt="可见范围" class="setting-icon">
           <span>可见范围</span>
@@ -158,7 +158,7 @@
           <img src="/assets/images/齿轮.svg" alt="高级设置" class="setting-icon">
           <span>高级设置</span>
         </div>
-      </div>
+      </div> -->
 
       <div class="publish-button-container">
         <button 
