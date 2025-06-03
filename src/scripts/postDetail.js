@@ -2,7 +2,7 @@ import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 
 // 配置 axios 默认值
-axios.defaults.baseURL = 'http://localhost:3000'
+axios.defaults.baseURL = 'http://116.198.43.27:3000'
 
 export function usePostDetail(props, emit) {
   // 响应式状态
@@ -63,7 +63,7 @@ export function usePostDetail(props, emit) {
 
   // 处理头像加载错误
   const handleAvatarError = (e) => {
-    e.target.src = 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+    e.target.src = 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
   }
 
   // 图片导航

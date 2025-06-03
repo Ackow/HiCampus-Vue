@@ -4,7 +4,7 @@
       <div class="profile-header">
         <div class="profile-left">
           <div class="avatar-container">
-            <img class="profile-avatar" :src="userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" alt="头像">
+            <img class="profile-avatar" :src="userInfo.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'" alt="头像">
           </div>
         </div>
         <div class="profile-right">
@@ -19,7 +19,7 @@
             <div class="profile-student-id">学号：{{ userInfo.studentId || '未设置' }}</div>
           </div>
           <div class="profile-tags">
-            <img :src="userInfo.gender === 'male' ? './assets/images/男.svg' : './assets/images/女.svg'" alt="性别" class="profile-gender">
+            <img :src="userInfo.gender === 'male' ? '/assets/images/男.svg' : '/assets/images/女.svg'" alt="性别" class="profile-gender">
             <span class="profile-age">{{ userInfo.age }}岁</span>
           </div>
         </div>
@@ -52,7 +52,7 @@
           <div class="note-title">{{ note.title }}</div>
           <div class="note-meta">
             <span class="note-like">
-              <img :src="note.isLiked ? './assets/images/爱心-红.svg' : './assets/images/爱心.svg'" 
+              <img :src="note.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
                    :alt="note.isLiked ? '已点赞' : '未点赞'" 
                    class="note-like-icon"
                    :class="{ 'liked': note.isLiked }">
@@ -133,12 +133,12 @@ const getImageUrl = (note) => {
   
   // 如果图片是对象，尝试获取filename
   if (typeof image === 'object' && image !== null) {
-    return `http://localhost:3000/uploads/images/${image.filename || image}`;
+    return `http://116.198.43.27:3000/uploads/images/${image.filename || image}`;
   }
   
   // 如果图片是字符串，直接使用
   if (typeof image === 'string') {
-    return `http://localhost:3000/uploads/images/${image}`;
+    return `http://116.198.43.27:3000/uploads/images/${image}`;
   }
   
   return '';
@@ -165,15 +165,15 @@ const showPostDetail = (post) => {
   // 处理图片数据
   const processedImages = post.images ? post.images.map(img => {
     if (typeof img === 'object' && img !== null) {
-      return `http://localhost:3000/uploads/images/${img.filename || img}`;
+      return `http://116.198.43.27:3000/uploads/images/${img.filename || img}`;
     }
-    return `http://localhost:3000/uploads/images/${img}`;
+    return `http://116.198.43.27:3000/uploads/images/${img}`;
   }) : [];
 
   // 处理头像数据
   const avatarUrl = post.creator.avatar 
-    ? `http://localhost:3000/uploads/avatars/${post.creator.avatar}`
-    : 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
+    ? `http://116.198.43.27:3000/uploads/avatars/${post.creator.avatar}`
+    : 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg';
 
   selectedPost.value = {
     id: post._id,

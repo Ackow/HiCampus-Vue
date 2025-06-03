@@ -78,7 +78,7 @@ export default {
     const hasMore = ref(true);
     const loading = ref(false);
     const markingAllAsRead = ref(false);
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = 'http://116.198.43.27:3000';
     const selectedPost = ref(null);
 
     // 计算是否有未读消息

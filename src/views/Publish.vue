@@ -256,7 +256,7 @@ const uploadImage = async (imageBlob) => {
   formData.append('image', imageBlob, filename);
 
   try {
-    const response = await fetch('http://localhost:3000/api/upload/image', {
+    const response = await fetch('http://116.198.43.27:3000/api/upload/image', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`

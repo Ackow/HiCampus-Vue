@@ -112,13 +112,13 @@
               </div>
               <div class="action-buttons">
                 <div class="likes-count" :class="{ 'liked': isLiked }" @click="toggleLike">
-                  <img :src="isLiked ? './assets/images/爱心-红.svg' : './assets/images/爱心.svg'" 
+                  <img :src="isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
                        :alt="isLiked ? '已点赞' : '未点赞'" 
                        class="btn-icon">
                   <span>{{ likeCount }}</span>
                 </div>
                 <div class="collect-count" :class="{ 'collected': isCollected }" @click="toggleCollect">
-                  <img :src="isCollected ? './assets/images/收藏-黄.svg' : './assets/images/收藏.svg'" 
+                  <img :src="isCollected ? '/assets/images/收藏-黄.svg' : '/assets/images/收藏.svg'" 
                        :alt="isCollected ? '已收藏' : '未收藏'" 
                        class="btn-icon">
                   <span>{{ collectCount }}</span>
@@ -220,14 +220,14 @@ const getUserDisplayInfo = (postDetail) => {
   if (isComplaintArea) {
     return {
       nickname: generateRandomNickname(),
-      avatar: 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+      avatar: 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
     };
   }
   
   // 确保返回正确的用户信息
   return {
     nickname: postDetail.username || postDetail.creator?.nickname,
-    avatar: postDetail.avatar || `http://localhost:3000/uploads/avatars/${postDetail.creator?.avatar}`
+    avatar: postDetail.avatar || `http://116.198.43.27:3000/uploads/avatars/${postDetail.creator?.avatar}`
   };
 };
 
@@ -236,12 +236,12 @@ const getCommentDisplayInfo = (comment) => {
   if (props.postDetail.topics && props.postDetail.topics.includes('#吐槽区')) {
     return {
       nickname: generateRandomNickname(),
-      avatar: 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+      avatar: 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
     };
   }
   return {
     nickname: comment.commenter.nickname,
-    avatar: `http://localhost:3000/uploads/avatars/${comment.commenter.avatar}`
+    avatar: `http://116.198.43.27:3000/uploads/avatars/${comment.commenter.avatar}`
   };
 };
 

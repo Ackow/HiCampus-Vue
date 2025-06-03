@@ -67,7 +67,7 @@ export function usePublish() {
     }
     try {
       console.log('搜索用户，查询词:', query)
-      const response = await fetch(`http://localhost:3000/api/user/users/search?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`http://116.198.43.27:3000/api/user/users/search?q=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -194,7 +194,7 @@ export function usePublish() {
     formData.append('image', file)
 
     try {
-      const response = await fetch('http://localhost:3000/api/user/upload/image', {
+      const response = await fetch('http://116.198.43.27:3000/api/user/upload/image', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -226,7 +226,7 @@ export function usePublish() {
 
       console.log('准备发送的文章数据:', articleWithMentionsAndTopics);
 
-      const response = await fetch('http://localhost:3000/api/articles', {
+      const response = await fetch('http://116.198.43.27:3000/api/articles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

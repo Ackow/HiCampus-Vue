@@ -31,7 +31,7 @@
             </div>
             <div class="interaction-info">
               <span class="likes">
-                <img :src="article.isLiked ? './assets/images/爱心-红.svg' : './assets/images/爱心.svg'" 
+                <img :src="article.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
                      :alt="article.isLiked ? '已点赞' : '未点赞'" 
                      class="btn-icon"
                      :class="{ 'liked': article.isLiked }"> 
@@ -97,7 +97,7 @@ const getUserDisplayInfo = (article) => {
   if (article.topics && article.topics.includes('#吐槽区')) {
     return {
       nickname: generateRandomNickname(),
-      avatar: 'http://localhost:3000/uploads/avatars/default-avatar.png'
+      avatar: 'http://116.198.43.27:3000/uploads/avatars/default-avatar.png'
     };
   }
   return {
@@ -126,7 +126,7 @@ const getArticleImage = (article) => {
       return imagePath;
     }
     // 如果是相对路径，添加服务器地址
-    return `http://localhost:3000/uploads/images/${imagePath}`;
+    return `http://116.198.43.27:3000/uploads/images/${imagePath}`;
   }
   return null;
 };
@@ -167,7 +167,7 @@ const openPostDetail = (article) => {
     avatar: userInfo.avatar,
     title: article.title,
     description: article.content,
-    images: article.images ? article.images.map(img => `http://localhost:3000/uploads/images/${img}`) : [],
+    images: article.images ? article.images.map(img => `http://116.198.43.27:3000/uploads/images/${img}`) : [],
     likeCount: article.likeCount || 0,
     collectCount: article.collectCount || 0,
     commentCount: article.commentCount || 0,
