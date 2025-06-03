@@ -26,7 +26,7 @@
                 </span>
                 <input :type="showPassword ? 'text' : 'password'" v-model="loginForm.password" name="password" placeholder="请输入密码" required />
                 <span class="password-toggle" data-target="password" @click="togglePassword">
-                  <img :src="showPassword ? '/assets/images/不显示.svg' : '/assets/images/显示.svg'" 
+                  <img :src="showPassword ? './assets/images/不显示.svg' : './assets/images/显示.svg'" 
                        :alt="showPassword ? '隐藏' : '显示'" 
                        class="input-icon-img"/>
                 </span>
@@ -71,7 +71,7 @@
                   <img src="/assets/images/密码.svg" alt="密码"  class="input-icon-img"/>                </span>
                 <input :type="showPassword ? 'text' : 'password'" v-model="registerForm.password" name="password" placeholder="请输入密码" required />
                 <span class="password-toggle" data-target="password" @click="togglePassword">
-                  <img :src="showPassword ? '/assets/images/不显示.svg' : '/assets/images/显示.svg'" 
+                  <img :src="showPassword ? './assets/images/不显示.svg' : './assets/images/显示.svg'" 
                        :alt="showPassword ? '隐藏' : '显示'" 
                        class="input-icon-img"/>
                 </span>
@@ -82,7 +82,7 @@
                 </span>
                 <input :type="showConfirmPassword ? 'text' : 'password'" v-model="registerForm.confirmPassword" name="confirmPassword" placeholder="请确认密码" required />
                 <span class="password-toggle" data-target="confirmPassword" @click="toggleConfirmPassword">
-                  <img :src="showConfirmPassword ? '/assets/images/不显示.svg' : '/assets/images/显示.svg'" 
+                  <img :src="showConfirmPassword ? './assets/images/不显示.svg' : './assets/images/显示.svg'" 
                        :alt="showConfirmPassword ? '隐藏' : '显示'" 
                        class="input-icon-img"/>
                 </span>

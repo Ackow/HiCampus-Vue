@@ -31,7 +31,7 @@
             </div>
             <div class="interaction-info">
               <span class="likes">
-                <img :src="article.isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+                <img :src="article.isLiked ? './assets/images/爱心-红.svg' : './assets/images/爱心.svg'" 
                      :alt="article.isLiked ? '已点赞' : '未点赞'" 
                      class="btn-icon"
                      :class="{ 'liked': article.isLiked }"> 

@@ -112,13 +112,13 @@
               </div>
               <div class="action-buttons">
                 <div class="likes-count" :class="{ 'liked': isLiked }" @click="toggleLike">
-                  <img :src="isLiked ? '/assets/images/爱心-红.svg' : '/assets/images/爱心.svg'" 
+                  <img :src="isLiked ? './assets/images/爱心-红.svg' : './assets/images/爱心.svg'" 
                        :alt="isLiked ? '已点赞' : '未点赞'" 
                        class="btn-icon">
                   <span>{{ likeCount }}</span>
                 </div>
                 <div class="collect-count" :class="{ 'collected': isCollected }" @click="toggleCollect">
-                  <img :src="isCollected ? '/assets/images/收藏-黄.svg' : '/assets/images/收藏.svg'" 
+                  <img :src="isCollected ? './assets/images/收藏-黄.svg' : './assets/images/收藏.svg'" 
                        :alt="isCollected ? '已收藏' : '未收藏'" 
                        class="btn-icon">
                   <span>{{ collectCount }}</span>

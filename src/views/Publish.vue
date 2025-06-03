@@ -117,7 +117,7 @@
                 >
                   <div class="user-info">
                     <img 
-                      :src="user.avatar || '/assets/images/default-avatar.png'" 
+                      :src="user.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'" 
                       :alt="user.nickname || user.username"
                       class="user-avatar"
                     >
