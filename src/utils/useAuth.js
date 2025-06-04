@@ -3,7 +3,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 // API配置
-const API_URL = 'http://116.198.43.27:3000/api'
+const API_URL = 'http://localhost:3000/api'
 
 export function useAuth() {
   const router = useRouter()
@@ -95,7 +95,7 @@ export function useAuth() {
         // 确保头像URL是完整的
         const userData = {
           ...result.user,
-          avatar: result.user.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
+          avatar: result.user.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
         };
         setUserInfo(userData)
         localStorage.setItem('isLoggedIn', 'true')

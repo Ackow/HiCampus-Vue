@@ -28,7 +28,7 @@
         <div class="user-profile-container" id="userProfile" :style="{ display: isLoggedIn ? 'flex' : 'none' }">
           <div class="user-profile-wrapper">
             <a class="user-profile-link">
-              <img :alt="userInfo?.nickname || '用户头像'" :src="userInfo?.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'" class="user-avatar">
+              <img :alt="userInfo?.nickname || '用户头像'" :src="userInfo?.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" class="user-avatar">
               <span class="user-nickname">{{ userInfo?.nickname || userInfo?.username || '加载中...' }}</span>
             </a>
             <div class="user-dropdown-menu">
@@ -120,7 +120,7 @@ const handleUserInfoUpdate = (event) => {
     // 强制更新头像显示
     const avatarImg = document.querySelector('.user-avatar')
     if (avatarImg) {
-      avatarImg.src = userInfo.value.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
+      avatarImg.src = userInfo.value.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
     }
   }
 }

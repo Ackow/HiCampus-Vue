@@ -22,7 +22,7 @@ export function useEditProfile() {
       formData.value.studentId = userInfo.studentId
       formData.value.age = userInfo.age
       formData.value.gender = userInfo.gender
-      avatarUrl.value = userInfo.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
+      avatarUrl.value = userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
     }
   }
 
@@ -50,7 +50,7 @@ export function useEditProfile() {
         const formData = new FormData()
         formData.append('avatar', file)
 
-        const response = await fetch('http://116.198.43.27:3000/api/user/upload/avatar', {
+        const response = await fetch('http://localhost:3000/api/user/upload/avatar', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -159,7 +159,7 @@ export function useEditProfile() {
     }
 
     try {
-      const response = await fetch('http://116.198.43.27:3000/api/user/update', {
+      const response = await fetch('http://localhost:3000/api/user/update', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

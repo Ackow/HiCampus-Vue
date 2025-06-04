@@ -4,7 +4,7 @@
       <div class="profile-header">
         <div class="profile-left">
           <div class="avatar-container">
-            <img class="profile-avatar" :src="userInfo.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'" alt="头像">
+            <img class="profile-avatar" :src="userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" alt="头像">
           </div>
         </div>
         <div class="profile-right">
@@ -133,12 +133,12 @@ const getImageUrl = (note) => {
   
   // 如果图片是对象，尝试获取filename
   if (typeof image === 'object' && image !== null) {
-    return `http://116.198.43.27:3000/uploads/images/${image.filename || image}`;
+    return `http://localhost:3000/uploads/images/${image.filename || image}`;
   }
   
   // 如果图片是字符串，直接使用
   if (typeof image === 'string') {
-    return `http://116.198.43.27:3000/uploads/images/${image}`;
+    return `http://localhost:3000/uploads/images/${image}`;
   }
   
   return '';
@@ -165,15 +165,15 @@ const showPostDetail = (post) => {
   // 处理图片数据
   const processedImages = post.images ? post.images.map(img => {
     if (typeof img === 'object' && img !== null) {
-      return `http://116.198.43.27:3000/uploads/images/${img.filename || img}`;
+      return `http://localhost:3000/uploads/images/${img.filename || img}`;
     }
-    return `http://116.198.43.27:3000/uploads/images/${img}`;
+    return `http://localhost:3000/uploads/images/${img}`;
   }) : [];
 
   // 处理头像数据
   const avatarUrl = post.creator.avatar 
-    ? `http://116.198.43.27:3000/uploads/avatars/${post.creator.avatar}`
-    : 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg';
+    ? `http://localhost:3000/uploads/avatars/${post.creator.avatar}`
+    : 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
 
   selectedPost.value = {
     id: post._id,
@@ -188,7 +188,8 @@ const showPostDetail = (post) => {
     createdAt: post.createdAt,
     isLiked: post.isLiked || false,
     isCollected: post.isCollected || false,
-    creatorId: post.creator._id
+    creatorId: post.creator._id,
+    location: post.location || null
   }
   console.log('处理后的文章详情数据:', selectedPost.value);
   showDetail.value = true;

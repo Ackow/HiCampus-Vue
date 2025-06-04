@@ -13,7 +13,7 @@ export function useArticleList() {
   // 获取文章图片URL
   const getArticleImage = (article) => {
     if (article.images && article.images.length > 0) {
-      return `http://116.198.43.27:3000/uploads/images/${article.images[0]}`;
+      return `http://localhost:3000/uploads/images/${article.images[0]}`;
     }
     return '/assets/images/logo.png';
   };
@@ -21,9 +21,9 @@ export function useArticleList() {
   // 获取用户头像URL
   const getAvatarUrl = (creator) => {
     if (creator.avatar) {
-      return `http://116.198.43.27:3000/uploads/avatars/${creator.avatar}`;
+      return `http://localhost:3000/uploads/avatars/${creator.avatar}`;
     }
-    return 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg';
+    return 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
   };
 
   // 处理图片加载错误
@@ -33,7 +33,7 @@ export function useArticleList() {
 
   // 处理头像加载错误
   const handleAvatarError = (event) => {
-    event.target.src = 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg';
+    event.target.src = 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
   };
 
   // 加载文章
@@ -45,7 +45,7 @@ export function useArticleList() {
       isLoading.value = true;
       error.value = null;
 
-      const response = await fetch(`http://116.198.43.27:3000/api/articles?page=${page}&limit=${limit}`);
+      const response = await fetch(`http://localhost:3000/api/articles?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -79,7 +79,7 @@ export function useArticleList() {
     
     for (const article of articles.value) {
       try {
-        const response = await fetch(`http://116.198.43.27:3000/api/articles/${article._id}/like-status`, {
+        const response = await fetch(`http://localhost:3000/api/articles/${article._id}/like-status`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -138,7 +138,7 @@ export function useArticleList() {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch(`http://116.198.43.27:3000/api/articles/search?keyword=${encodeURIComponent(keyword)}`, {
+      const response = await fetch(`http://localhost:3000/api/articles/search?keyword=${encodeURIComponent(keyword)}`, {
         headers
       });
       
@@ -178,7 +178,7 @@ export function useArticleList() {
         'Authorization': `Bearer ${token}`
       };
       
-      const response = await fetch('http://116.198.43.27:3000/api/articles', {
+      const response = await fetch('http://localhost:3000/api/articles', {
         headers
       });
       

@@ -58,6 +58,12 @@
                       {{ topic }}
                     </span>
                   </div>
+                  <div v-if="postDetail.location" class="post-location">
+                    <img src="/assets/images/定位.svg" alt="地点" class="location-icon">
+                    <div class="location-info">
+                      <div class="location-name">{{ postDetail.location.name }}</div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="comments-section">
@@ -220,14 +226,14 @@ const getUserDisplayInfo = (postDetail) => {
   if (isComplaintArea) {
     return {
       nickname: generateRandomNickname(),
-      avatar: 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
+      avatar: 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
     };
   }
   
   // 确保返回正确的用户信息
   return {
     nickname: postDetail.username || postDetail.creator?.nickname,
-    avatar: postDetail.avatar || `http://116.198.43.27:3000/uploads/avatars/${postDetail.creator?.avatar}`
+    avatar: postDetail.avatar || `http://localhost:3000/uploads/avatars/${postDetail.creator?.avatar}`
   };
 };
 
@@ -236,12 +242,12 @@ const getCommentDisplayInfo = (comment) => {
   if (props.postDetail.topics && props.postDetail.topics.includes('#吐槽区')) {
     return {
       nickname: generateRandomNickname(),
-      avatar: 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'
+      avatar: 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
     };
   }
   return {
     nickname: comment.commenter.nickname,
-    avatar: `http://116.198.43.27:3000/uploads/avatars/${comment.commenter.avatar}`
+    avatar: `http://localhost:3000/uploads/avatars/${comment.commenter.avatar}`
   };
 };
 
@@ -358,5 +364,61 @@ const handleUserInfoClick = async (event, isComment = false, comment = null) => 
 
 .complaint-tag:hover {
   background-color: #fff1f0;
+}
+
+.post-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background-color: #f0f2f5;
+  border-radius: 16px;
+  margin: 8px 0;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.post-location:hover {
+  background-color: #e4e6eb;
+}
+
+.post-location img {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+}
+
+.post-location-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.post-location-address {
+  font-size: 12px;
+  color: #999;
+  margin-left: 4px;
+}
+
+.location-icon {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.location-info {
+  flex: 1;
+}
+
+.location-name {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.location-address {
+  color: #666;
+  font-size: 12px;
+  margin-top: 2px;
 }
 </style> 

@@ -29,7 +29,7 @@ const router = useRouter()
 const route = useRoute()
 const currentRoute = ref(route.path)
 const unreadCount = ref(0)
-const baseUrl = 'http://116.198.43.27:3000'
+const baseUrl = 'http://localhost:3000'
 let pollInterval = null
 
 // 获取未读消息数量

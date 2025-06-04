@@ -39,11 +39,13 @@
         placeholder="添加标题"
       >
 
-      <textarea 
-        class="textarea-body" 
-        v-model="content"
-        placeholder="添加正文"
-      ></textarea>
+      <div class="content-area">
+        <textarea 
+          class="textarea-body" 
+          v-model="content"
+          placeholder="添加正文"
+        ></textarea>
+      </div>
 
       <div class="options-row">
         <div class="option-tag" @click="showTopicSearch = true">
@@ -52,7 +54,6 @@
           <span v-if="topics.length" class="tag-count">({{ topics.length }})</span>
           <!-- 话题选择弹窗 -->
           <div v-if="showTopicSearch" class="search-modal">
-            <div class="modal-overlay" @click="showTopicSearch = false"></div>
             <div class="search-popup" ref="topicSearchRef">
               <div class="search-header">
                 <input 
@@ -93,7 +94,6 @@
           <span v-if="mentions.length" class="tag-count">({{ mentions.length }})</span>
           <!-- 用户搜索弹窗 -->
           <div v-if="showUserSearch" class="search-modal">
-            <div class="modal-overlay" @click="showUserSearch = false"></div>
             <div class="search-popup" ref="userSearchRef">
               <div class="search-header">
                 <input 
@@ -117,7 +117,7 @@
                 >
                   <div class="user-info">
                     <img 
-                      :src="user.avatar || 'http://116.198.43.27:3000/uploads/avatars/default-avatar.jpg'" 
+                      :src="user.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'" 
                       :alt="user.nickname || user.username"
                       class="user-avatar"
                     >
@@ -131,21 +131,44 @@
             </div>
           </div>
         </div>
-        <div class="option-tag">
+        <div class="option-tag" @click="showLocationSearch = true">
           <img src="/assets/images/定位.svg" alt="地点" class="option-icon">
           <span>地点</span>
-        </div>
-      </div>
-
-      <!-- 已选择的标签展示 -->
-      <div class="selected-tags" v-if="topics.length > 0 || mentions.length > 0">
-        <div v-for="topic in topics" :key="topic" class="selected-tag">
-          <span>{{ topic }}</span>
-          <button class="remove-tag" @click="removeTopic(topic)">×</button>
-        </div>
-        <div v-for="user in mentions" :key="user.id" class="selected-tag">
-          <span>@{{ user.name }}</span>
-          <button class="remove-tag" @click="removeMention(user.id)">×</button>
+          <span v-if="selectedLocation" class="tag-count">({{ selectedLocation.name }})</span>
+          <!-- 地点选择弹窗 -->
+          <div v-if="showLocationSearch" class="search-modal">
+            <div class="modal-overlay" @click.stop="showLocationSearch = false"></div>
+            <div class="search-popup" ref="locationSearchRef">
+              <div class="search-header">
+                <input 
+                  type="text" 
+                  v-model="locationQuery" 
+                  @input="searchLocation($event.target.value)"
+                  placeholder="搜索地点..."
+                  class="search-input"
+                >
+                <button class="close-btn" @click.stop="locationQuery = ''">×</button>
+              </div>
+              <div class="search-results">
+                <div v-if="locationResults && locationResults.length > 0" class="location-results-list">
+                  <div 
+                    v-for="location in locationResults" 
+                    :key="location.id"
+                    class="search-item"
+                    @click="handleLocationSelect(location)"
+                  >
+                    <div class="location-info">
+                      <div class="location-name">{{ location.name }}</div>
+                      <div class="location-address">{{ location.address }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else-if="locationQuery" class="no-results">
+                  未找到相关地点
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
   
@@ -178,6 +201,9 @@ import { usePublish } from '../scripts/publish'
 import { ref } from 'vue'
 
 const imageInput = ref(null)
+const showLocationSearch = ref(false)
+const locationQuery = ref('')
+const locationSearchRef = ref(null)
 
 // 生成随机渐变色
 const generateGradientColors = () => {
@@ -256,7 +282,7 @@ const uploadImage = async (imageBlob) => {
   formData.append('image', imageBlob, filename);
 
   try {
-    const response = await fetch('http://116.198.43.27:3000/api/upload/image', {
+    const response = await fetch('http://localhost:3000/api/upload/image', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -303,10 +329,15 @@ const {
   handleTopicSelect,
   addCustomTopic,
   handleClickOutside,
-  handlePublish: originalHandlePublish
+  handlePublish: originalHandlePublish,
+  searchLocation,
+  handleLocationSelect,
+  removeLocation,
+  locationResults,
+  selectedLocation
 } = usePublish()
 
-// 重写发布处理函数
+// 发布处理函数
 const handlePublish = async () => {
   try {
     // 如果没有上传图片，生成封面图片
@@ -346,4 +377,172 @@ const onAddClick = () => {
 
 <style scoped>
 @import '../styles/publish.css';
+
+.content-area {
+  position: relative;
+  width: 100%;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  z-index: 999;
+  cursor: default;
+}
+
+.search-modal {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  margin-top: 8px;
+}
+
+.search-popup {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+}
+
+.location-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+  z-index: 1000;
+}
+
+.location-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.location-results-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.close-results {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.location-results-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.location-result-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.location-result-item:hover {
+  background-color: #f5f5f5;
+}
+
+.location-result-item:last-child {
+  border-bottom: none;
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.location-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.location-address {
+  font-size: 0.9em;
+  color: #666;
+}
+
+.location-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8em;
+  color: #999;
+}
+
+.location-distance {
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 10px;
+  color: #666;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.search-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search-item {
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-item:hover {
+  background-color: #f5f5f5;
+}
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 确保选项标签容器是相对定位 */
+.option-tag {
+  position: relative;
+}
 </style> 

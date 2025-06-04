@@ -19,8 +19,8 @@ export function useProfileData() {
   const fetchUserInfo = async (userId = null) => {
     try {
       const url = userId 
-        ? `http://116.198.43.27:3000/api/user/${userId}`
-        : 'http://116.198.43.27:3000/api/user';
+        ? `http://localhost:3000/api/user/${userId}`
+        : 'http://localhost:3000/api/user';
       
       const response = await fetch(url, {
         headers: {
@@ -122,7 +122,7 @@ export function useProfileData() {
 
   const fetchUserLikes = async () => {
     try {
-      const response = await fetch('http://116.198.43.27:3000/api/articles/likes', {
+      const response = await fetch('http://localhost:3000/api/articles/likes', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -163,7 +163,7 @@ export function useProfileData() {
         return;
       }
 
-      const response = await fetch('http://116.198.43.27:3000/api/articles/favorites', {
+      const response = await fetch('http://localhost:3000/api/articles/favorites', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -201,8 +201,8 @@ export function useProfileData() {
   const fetchUserNotes = async (userId = null) => {
     try {
       const url = userId 
-        ? `http://116.198.43.27:3000/api/articles/user/${userId}`
-        : 'http://116.198.43.27:3000/api/articles/user';
+        ? `http://localhost:3000/api/articles/user/${userId}`
+        : 'http://localhost:3000/api/articles/user';
       
       const response = await fetch(url, {
         headers: {

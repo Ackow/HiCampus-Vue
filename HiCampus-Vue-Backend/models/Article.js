@@ -16,6 +16,20 @@ const articleSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    location: {
+        name: {
+            type: String,
+            trim: true
+        },
+        address: {
+            type: String,
+            trim: true
+        },
+        coordinates: {
+            latitude: Number,
+            longitude: Number
+        }
+    },
     likeCount: {
         type: Number,
         default: 0

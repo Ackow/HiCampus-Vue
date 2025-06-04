@@ -9,13 +9,18 @@ export function usePublish() {
   const searchResults = ref([])
   const showTopicSearch = ref(false)
   const showUserSearch = ref(false)
+  const showLocationSearch = ref(false)
   const topicQuery = ref('')
   const userQuery = ref('')
+  const locationQuery = ref('')
   const title = ref('')
   const content = ref('')
   const isPublishing = ref(false)
   const topicSearchRef = ref(null)
   const userSearchRef = ref(null)
+  const locationSearchRef = ref(null)
+  const selectedLocation = ref(null)
+  const locationResults = ref([])
 
   // 默认话题选项
   const defaultTopics = [
@@ -67,7 +72,7 @@ export function usePublish() {
     }
     try {
       console.log('搜索用户，查询词:', query)
-      const response = await fetch(`http://116.198.43.27:3000/api/user/users/search?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`http://localhost:3000/api/user/users/search?q=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -194,7 +199,7 @@ export function usePublish() {
     formData.append('image', file)
 
     try {
-      const response = await fetch('http://116.198.43.27:3000/api/user/upload/image', {
+      const response = await fetch('http://localhost:3000/api/user/upload/image', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -226,7 +231,7 @@ export function usePublish() {
 
       console.log('准备发送的文章数据:', articleWithMentionsAndTopics);
 
-      const response = await fetch('http://116.198.43.27:3000/api/articles', {
+      const response = await fetch('http://localhost:3000/api/articles', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,10 +260,15 @@ export function usePublish() {
     // 检查点击是否在弹窗内
     const isClickInTopicPopup = topicSearchRef.value && topicSearchRef.value.contains(event.target)
     const isClickInUserPopup = userSearchRef.value && userSearchRef.value.contains(event.target)
+    const isClickInLocationPopup = locationSearchRef.value && locationSearchRef.value.contains(event.target)
     
     // 检查点击是否在按钮上
     const isClickOnTopicButton = event.target.closest('.option-tag') && event.target.closest('.option-tag').querySelector('img[alt="话题"]')
     const isClickOnUserButton = event.target.closest('.option-tag') && event.target.closest('.option-tag').querySelector('img[alt="用户"]')
+    const isClickOnLocationButton = event.target.closest('.option-tag') && event.target.closest('.option-tag').querySelector('img[alt="地点"]')
+
+    // 检查点击是否在遮罩层上
+    const isClickOnOverlay = event.target.classList.contains('modal-overlay')
 
     // 如果点击在弹窗外且不在对应的按钮上，则关闭弹窗
     if (showTopicSearch.value && !isClickInTopicPopup && !isClickOnTopicButton) {
@@ -267,6 +277,135 @@ export function usePublish() {
     if (showUserSearch.value && !isClickInUserPopup && !isClickOnUserButton) {
       showUserSearch.value = false
     }
+    if (showLocationSearch.value && !isClickInLocationPopup && !isClickOnLocationButton) {
+      showLocationSearch.value = false
+    }
+  }
+
+  // 防抖函数
+  const debounce = (fn, delay) => {
+    let timer = null
+    return function (...args) {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        fn.apply(this, args)
+      }, delay)
+    }
+  }
+
+  // 获取当前位置
+  const getCurrentPosition = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        console.log('浏览器不支持地理定位');
+        reject(new Error('浏览器不支持地理定位'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log('获取位置成功:', position);
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy // 添加精度信息
+          });
+        },
+        (error) => {
+          console.error('获取位置失败:', error);
+          // 如果定位失败，使用默认位置（比如学校位置）
+          resolve({
+            latitude: 32.3937, // 默认纬度
+            longitude: 119.4127, // 默认经度
+            accuracy: 1000 // 默认精度
+          });
+        },
+        {
+          enableHighAccuracy: true, // 使用高精度定位
+          timeout: 10000, // 增加超时时间
+          maximumAge: 0
+        }
+      );
+    });
+  };
+
+  // 搜索地点
+  const searchLocation = debounce(async (query) => {
+    if (!query) {
+      locationResults.value = []
+      return
+    }
+
+    try {
+      // 获取当前位置
+      const position = await getCurrentPosition();
+      console.log('当前位置:', position);
+
+      // 构建搜索参数
+      const params = new URLSearchParams({
+        key: 'f811a17e0759c740387656f1aada88dc',
+        keywords: query,
+        city: '全国',
+        extensions: 'all',
+        offset: 10,
+        page: 1,
+        location: `${position.longitude},${position.latitude}`,
+        radius: position.accuracy || 50000,
+        sortrule: 'distance',
+        types: '商务住宅|生活服务|交通设施服务|科教文化服务|医疗保健服务|政府机构及社会团体|风景名胜|购物服务|餐饮服务'
+      });
+
+      console.log('搜索参数:', params.toString());
+
+      const response = await fetch(`https://restapi.amap.com/v3/place/text?${params.toString()}`);
+      const data = await response.json();
+      console.log('搜索响应:', data);
+
+      if (response.ok && data.status === '1' && data.pois && Array.isArray(data.pois)) {
+        // 使用 Vue 的响应式更新方法
+        const results = data.pois.map(poi => ({
+          id: poi.id,
+          name: poi.name,
+          address: poi.address,
+          district: poi.adname,
+          type: poi.type,
+          distance: poi.distance,
+          coordinates: {
+            latitude: parseFloat(poi.location.split(',')[1]),
+            longitude: parseFloat(poi.location.split(',')[0])
+          }
+        }));
+        console.log('处理的地点信息:', results);
+        // 直接赋值整个数组
+        locationResults.value = results;
+      } else {
+        console.log('未找到地点或响应格式错误:', data);
+        locationResults.value = [];
+      }
+    } catch (error) {
+      console.error('搜索地点失败:', error);
+      locationResults.value = [];
+    }
+  }, 500);
+
+  // 处理地点选择
+  const handleLocationSelect = (location) => {
+    console.log('选择地点:', location);
+    selectedLocation.value = {
+      name: location.name,
+      address: location.address,
+      district: location.district,
+      distance: location.distance,
+      coordinates: location.coordinates
+    };
+    showLocationSearch.value = false;
+    locationQuery.value = '';
+    locationResults.value = [];
+  };
+
+  // 移除地点
+  const removeLocation = () => {
+    selectedLocation.value = null
   }
 
   // 发布文章
@@ -310,7 +449,8 @@ export function usePublish() {
       const articleData = {
         title: title.value,
         content: content.value,
-        images: uploadedImages
+        images: uploadedImages,
+        location: selectedLocation.value
       }
 
       // 3. 发布文章
@@ -324,6 +464,7 @@ export function usePublish() {
       images.value = []
       mentions.value = []
       topics.value = []
+      selectedLocation.value = null
       // 跳转到首页
       router.push('/')
 
@@ -352,12 +493,17 @@ export function usePublish() {
     searchResults,
     showTopicSearch,
     showUserSearch,
+    showLocationSearch,
     topicQuery,
     userQuery,
+    locationQuery,
     availableTopics,
     isPublishing,
     topicSearchRef,
     userSearchRef,
+    locationSearchRef,
+    selectedLocation,
+    locationResults,
     triggerImageInput,
     handleImageSelect,
     removeImage,
@@ -366,10 +512,13 @@ export function usePublish() {
     addTopic,
     removeTopic,
     searchUsers,
+    searchLocation,
     handleUserSelect,
     handleTopicSelect,
+    handleLocationSelect,
     addCustomTopic,
     handleClickOutside,
-    handlePublish
+    handlePublish,
+    removeLocation
   }
 } 

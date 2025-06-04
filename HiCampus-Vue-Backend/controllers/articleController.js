@@ -163,7 +163,7 @@ const getMentionedArticles = async (req, res) => {
 // 创建文章
 const createArticle = async (req, res) => {
     try {
-        const { title, content, images, mentions, topics } = req.body;
+        const { title, content, images, mentions, topics, location } = req.body;
         
         // 验证必要字段
         if (!title || !content) {
@@ -188,7 +188,8 @@ const createArticle = async (req, res) => {
             content,
             imagesCount: images ? images.length : 0,
             mentionsCount: mentions ? mentions.length : 0,
-            topicsCount: topics ? topics.length : 0
+            topicsCount: topics ? topics.length : 0,
+            location: location || null
         });
 
         // 创建文章
@@ -199,7 +200,8 @@ const createArticle = async (req, res) => {
             likeCount: 0,
             commentCount: 0,
             mentionedUsers: mentions || [],
-            topics: topics || []
+            topics: topics || [],
+            location: location || null
         });
 
         // 保存文章

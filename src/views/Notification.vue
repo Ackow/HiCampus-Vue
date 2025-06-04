@@ -78,7 +78,7 @@ export default {
     const hasMore = ref(true);
     const loading = ref(false);
     const markingAllAsRead = ref(false);
-    const baseUrl = 'http://116.198.43.27:3000';
+    const baseUrl = 'http://localhost:3000';
     const selectedPost = ref(null);
 
     // 计算是否有未读消息
@@ -253,7 +253,8 @@ export default {
           isCollected: article.isCollected || false,
           topics: article.topics || [],
           creatorId: article.creator._id,
-          comments: article.comments || []
+          comments: article.comments || [],
+          location: article.location || null
         };
       } catch (error) {
         console.error('获取文章详情失败:', error);
