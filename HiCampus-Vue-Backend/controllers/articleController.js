@@ -163,7 +163,7 @@ const getMentionedArticles = async (req, res) => {
 // 创建文章
 const createArticle = async (req, res) => {
     try {
-        const { title, content, images, mentions, topics, location } = req.body;
+        const { title, content, images, mentions, topics, location, adminMentions } = req.body;
         
         // 验证必要字段
         if (!title || !content) {
@@ -189,7 +189,8 @@ const createArticle = async (req, res) => {
             imagesCount: images ? images.length : 0,
             mentionsCount: mentions ? mentions.length : 0,
             topicsCount: topics ? topics.length : 0,
-            location: location || null
+            location: location || null,
+            adminMentions: adminMentions || []
         });
 
         // 创建文章
@@ -201,7 +202,8 @@ const createArticle = async (req, res) => {
             commentCount: 0,
             mentionedUsers: mentions || [],
             topics: topics || [],
-            location: location || null
+            location: location || null,
+            adminMentions: adminMentions || []
         });
 
         // 保存文章
@@ -227,7 +229,49 @@ const createArticle = async (req, res) => {
             }
         }
 
-        // 处理艾特消息
+        // 处理管理员艾特消息
+        if (adminMentions && adminMentions.length > 0) {
+            try {
+                let targetUsers = [];
+                
+                // 获取所有用户
+                const allUsers = await User.find({}, '_id');
+                
+                // 处理艾特所有用户
+                if (adminMentions.includes('all_users')) {
+                    targetUsers = allUsers.map(user => user._id);
+                } else {
+                    // 处理艾特特定学院
+                    const collegeMentions = adminMentions.filter(mention => mention.startsWith('college:'));
+                    if (collegeMentions.length > 0) {
+                        const colleges = collegeMentions.map(mention => mention.replace('college:', ''));
+                        const collegeUsers = await User.find({ college: { $in: colleges } }, '_id');
+                        targetUsers = collegeUsers.map(user => user._id);
+                    }
+                }
+
+                // 创建消息通知
+                if (targetUsers.length > 0) {
+                    const messagePromises = targetUsers.map(receiverId => {
+                        const message = new Message({
+                            sender: req.user.userId,
+                            receiver: receiverId,
+                            type: 'mention',
+                            article: savedArticle._id,
+                        });
+                        return message.save();
+                    });
+
+                    await Promise.all(messagePromises);
+                    console.log('管理员艾特消息创建成功');
+                }
+            } catch (messageError) {
+                console.error('管理员艾特消息创建失败:', messageError);
+                // 即使消息创建失败，也返回文章创建成功
+            }
+        }
+
+        // 处理普通用户艾特消息
         if (mentions && mentions.length > 0) {
             try {
                 const messagePromises = mentions.map(receiverId => {
@@ -235,15 +279,16 @@ const createArticle = async (req, res) => {
                         sender: req.user.userId,
                         receiver: receiverId,
                         type: 'mention',
-                        article: savedArticle._id
+                        article: savedArticle._id,
+                        content: `有人在文章《${title}》中提到了你`
                     });
                     return message.save();
                 });
 
                 await Promise.all(messagePromises);
-                console.log('艾特消息创建成功');
+                console.log('普通用户艾特消息创建成功');
             } catch (messageError) {
-                console.error('艾特消息创建失败:', messageError);
+                console.error('普通用户艾特消息创建失败:', messageError);
                 // 即使消息创建失败，也返回文章创建成功
             }
         }
@@ -918,12 +963,30 @@ const getUserArticlesById = async (req, res) => {
 const getArticleById = async (req, res) => {
     try {
         const { articleId } = req.params;
+        console.log('获取文章详情，ID:', articleId);
+
+        // 先获取原始文章数据
+        const rawArticle = await Article.findById(articleId);
+        console.log('原始文章数据:', {
+            id: rawArticle?._id,
+            mentionedUsers: rawArticle?.mentionedUsers,
+            adminMentions: rawArticle?.adminMentions
+        });
+
         const article = await Article.findById(articleId)
-            .populate('creator', 'nickname avatar');
+            .populate('creator', 'nickname avatar')
+            .populate('mentionedUsers', 'nickname avatar _id');
 
         if (!article) {
+            console.log('文章不存在:', articleId);
             return res.status(404).json({ message: '文章不存在' });
         }
+
+        console.log('填充后的文章数据:', {
+            id: article._id,
+            mentionedUsers: article.mentionedUsers,
+            adminMentions: article.adminMentions
+        });
 
         // 获取文章图片
         const images = await Image.find({ article: articleId });
@@ -943,12 +1006,28 @@ const getArticleById = async (req, res) => {
             ...comment.toObject(),
             creator: comment.commenter // 重命名为 creator 以匹配前端期望
         }));
+
+        // 处理被艾特用户信息
+        articleObj.mentionedUsers = article.mentionedUsers ? article.mentionedUsers.map(user => ({
+            _id: user._id,
+            nickname: user.nickname,
+            avatar: user.avatar ? user.avatar.split('/').pop() : 'default-avatar.jpg'
+        })) : [];
+
+        // 保留并格式化 adminMentions 信息
+        articleObj.adminMentions = article.adminMentions || [];
         
         // 如果用户已登录，检查点赞和收藏状态
         if (req.user) {
             articleObj.isLiked = article.likedBy.includes(req.user.userId);
             articleObj.isCollected = article.collectedBy.includes(req.user.userId);
         }
+
+        console.log('最终返回的文章详情:', {
+            id: articleObj._id,
+            mentionedUsers: articleObj.mentionedUsers,
+            adminMentions: articleObj.adminMentions
+        });
 
         res.json(articleObj);
     } catch (error) {

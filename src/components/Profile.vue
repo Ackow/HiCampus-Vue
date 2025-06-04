@@ -16,7 +16,8 @@
           </div>
           <div class="profile-meta">
             <div class="profile-meta-item">嗨号：{{ userInfo.uid }}</div>
-            <div class="profile-student-id">学号：{{ userInfo.studentId || '未设置' }}</div>
+            <div class="profile-meta-item">学号：{{ userInfo.studentId || '未设置' }}</div>
+            <div class="profile-meta-item">学院：{{ userInfo.college || '未设置' }}</div>
           </div>
           <div class="profile-tags">
             <img :src="userInfo.gender === 'male' ? './assets/images/男.svg' : './assets/images/女.svg'" alt="性别" class="profile-gender">

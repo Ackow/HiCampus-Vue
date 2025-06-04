@@ -42,7 +42,17 @@
               class="form-input student-id" 
               v-model="formData.studentId"
               placeholder="请输入学号（选填）" 
-              maxlength="20"
+              maxlength="8"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>学院</label>
+            <input 
+              type="text" 
+              class="form-input college" 
+              v-model="formData.college"
+              placeholder="请输入学院" 
             >
           </div>
 

@@ -175,7 +175,9 @@ const openPostDetail = (article) => {
     isCollected: article.isCollected || false,
     topics: article.topics || [],
     creatorId: article.creator._id,
-    location: article.location || null
+    location: article.location || null,
+    adminMentions: article.adminMentions || [],
+    mentionedUsers: article.mentionedUsers || []
   };
   showPostDetail.value = true;
 };

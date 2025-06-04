@@ -7,6 +7,7 @@ export function useEditProfile() {
     username: '',
     nickname: '',
     studentId: '',
+    college: '',
     age: '',
     gender: '',
     newPassword: '',
@@ -20,6 +21,7 @@ export function useEditProfile() {
       formData.value.username = userInfo.username
       formData.value.nickname = userInfo.nickname
       formData.value.studentId = userInfo.studentId
+      formData.value.college = userInfo.college
       formData.value.age = userInfo.age
       formData.value.gender = userInfo.gender
       avatarUrl.value = userInfo.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
@@ -141,6 +143,9 @@ export function useEditProfile() {
     }
     if (formData.value.studentId !== userInfo.studentId) {
       updateData.studentId = formData.value.studentId || null
+    }
+    if (formData.value.college !== userInfo.college) {
+      updateData.college = formData.value.college
     }
     if (formData.value.age && parseInt(formData.value.age) !== userInfo.age) {
       updateData.age = parseInt(formData.value.age)

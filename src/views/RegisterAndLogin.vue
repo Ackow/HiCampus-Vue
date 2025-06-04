@@ -68,6 +68,18 @@
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
+                  <img src="/assets/images/学院.svg" alt="学院图标"  class="input-icon-img"/>
+                </span>
+                <input 
+                  v-model="registerForm.college" 
+                  type="text" 
+                  name="college" 
+                  placeholder="请输入学院" 
+                  required 
+                />
+              </div>
+              <div class="input-wrapper">
+                <span class="input-icon">
                   <img src="/assets/images/密码.svg" alt="密码"  class="input-icon-img"/>                </span>
                 <input :type="showPassword ? 'text' : 'password'" v-model="registerForm.password" name="password" placeholder="请输入密码" required />
                 <span class="password-toggle" data-target="password" @click="togglePassword">

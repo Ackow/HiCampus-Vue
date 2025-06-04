@@ -48,6 +48,28 @@
                 <div class="post-text-content">
                   <p class="post-title">{{ postDetail.title }}</p>
                   <p class="post-description">{{ postDetail.description }}</p>
+                  <p class="post-mentions" v-if="mentionedUsers.length > 0 || adminMentions.length > 0">
+                    <template v-if="mentionedUsers.length > 0">
+                      <span 
+                        v-for="(user, index) in mentionedUsers" 
+                        :key="'user-'+index"
+                        class="mentioned-user"
+                        @click="handleUserInfoClick($event, false, null, user._id)"
+                      >
+                        @{{ user.nickname }}
+                      </span>
+                    </template>
+                    <template v-if="adminMentions.length > 0">
+                      <span v-if="mentionedUsers.length > 0">，</span>
+                      <span 
+                        v-for="(mention, index) in adminMentions" 
+                        :key="'admin-'+index"
+                        class="admin-mention"
+                      >
+                        @{{ mention === 'all_users' ? '全体用户' : mention.replace('college:', '') }}
+                      </span>
+                    </template>
+                  </p>
                   <div class="post-tags" v-if="postDetail.topics && postDetail.topics.length > 0">
                     <span 
                       v-for="(topic, index) in postDetail.topics" 
@@ -268,6 +290,8 @@ const {
   collectCount,
   previewImageIndex,
   showImagePreview,
+  mentionedUsers,
+  adminMentions,
   closeDetail,
   handleAvatarError,
   prevSlide,
@@ -285,7 +309,7 @@ const {
 } = usePostDetail(props, emit)
 
 // 添加用户信息点击处理函数
-const handleUserInfoClick = async (event, isComment = false, comment = null) => {
+const handleUserInfoClick = async (event, isComment = false, comment = null, userId = null) => {
   // 检查是否是吐槽区
   const isComplaintArea = props.postDetail.topics && props.postDetail.topics.includes('#吐槽区');
   if (isComplaintArea) {
@@ -336,89 +360,25 @@ const handleUserInfoClick = async (event, isComment = false, comment = null) => 
 <style scoped>
 @import '../styles/postDetail.css';
 
-.post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.tag {
-  background-color: #f0f2f5;
+.post-mentions {
   color: #666;
-  padding: 4px 12px;
-  border-radius: 16px;
   font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.tag:hover {
-  background-color: #e4e6eb;
-}
-
-.complaint-tag {
-  background-color: #fff2f0;
-  color: #ff4d4f;
-  border: 1px solid #ffccc7;
-}
-
-.complaint-tag:hover {
-  background-color: #fff1f0;
-}
-
-.post-location {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  background-color: #f0f2f5;
-  border-radius: 16px;
   margin: 8px 0;
-  font-size: 14px;
-  color: #666;
-  transition: all 0.3s ease;
+  line-height: 1.5;
 }
 
-.post-location:hover {
-  background-color: #e4e6eb;
+.mentioned-user {
+  color: #1890ff;
+  cursor: pointer;
+  margin: 0 4px;
 }
 
-.post-location img {
-  width: 14px;
-  height: 14px;
-  opacity: 0.6;
+.mentioned-user:hover {
+  text-decoration: underline;
 }
 
-.post-location-name {
-  font-weight: 500;
-  color: #333;
-}
-
-.post-location-address {
-  font-size: 12px;
-  color: #999;
-  margin-left: 4px;
-}
-
-.location-icon {
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-}
-
-.location-info {
-  flex: 1;
-}
-
-.location-name {
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
-}
-
-.location-address {
-  color: #666;
-  font-size: 12px;
-  margin-top: 2px;
+.admin-mention {
+  color: #ff4d4f;
+  margin: 0 4px;
 }
 </style> 

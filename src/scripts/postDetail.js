@@ -1,4 +1,4 @@
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 
 // 配置 axios 默认值
@@ -22,6 +22,25 @@ export function usePostDetail(props, emit) {
   const collectCount = ref(0)
   const previewImageIndex = ref(0)
   const showImagePreview = ref(false)
+
+  // 新增：返回艾特信息
+  const mentionedUsers = computed(() => {
+    if (!props.postDetail) {
+      console.log('postDetail 为空')
+      return []
+    }
+    const users = props.postDetail.mentionedUsers || []
+    return Array.isArray(users) ? users : []
+  })
+
+  const adminMentions = computed(() => {
+    if (!props.postDetail) {
+      console.log('postDetail 为空')
+      return []
+    }
+    const mentions = props.postDetail.adminMentions || []
+    return Array.isArray(mentions) ? mentions : []
+  })
 
   // 检查权限
   const checkPermission = () => {
@@ -327,7 +346,10 @@ export function usePostDetail(props, emit) {
   }, { immediate: true })
 
   watch(() => props.postDetail, (newVal) => {
+    console.log('postDetail 发生变化，完整数据:', JSON.stringify(newVal, null, 2))
     if (newVal) {
+      console.log('mentionedUsers 数据:', newVal.mentionedUsers)
+      console.log('adminMentions 数据:', newVal.adminMentions)
       initLikeAndCollectData()
       
       if (isLoggedIn()) {
@@ -377,6 +399,8 @@ export function usePostDetail(props, emit) {
     collectCount,
     previewImageIndex,
     showImagePreview,
+    mentionedUsers,
+    adminMentions,
 
     // 方法
     checkPermission,

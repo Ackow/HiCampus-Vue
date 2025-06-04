@@ -222,14 +222,15 @@ export function usePublish() {
   // 创建文章
   const createArticle = async (articleData) => {
     try {
+      
       // 添加艾特用户和话题信息
       const articleWithMentionsAndTopics = {
         ...articleData,
         mentions: mentions.value.map(m => m.id), // 确保只发送用户ID
-        topics: topics.value
+        topics: topics.value,
+        adminMentions: articleData.adminMentions || [] // 确保adminMentions有默认值
       }
 
-      console.log('准备发送的文章数据:', articleWithMentionsAndTopics);
 
       const response = await fetch('http://localhost:3000/api/articles', {
         method: 'POST',
@@ -246,7 +247,6 @@ export function usePublish() {
       }
 
       const result = await response.json()
-      console.log('文章创建成功，返回数据:', result);
 
       return result;
     } catch (error) {
@@ -409,7 +409,7 @@ export function usePublish() {
   }
 
   // 发布文章
-  const handlePublish = async () => {
+  const handlePublish = async (publishData) => {
     // 表单验证
     if (!title.value.trim()) {
       alert('请输入文章标题')
@@ -450,27 +450,28 @@ export function usePublish() {
         title: title.value,
         content: content.value,
         images: uploadedImages,
-        location: selectedLocation.value
+        location: selectedLocation.value,
+        topics: topics.value,
+        mentions: mentions.value.map(m => m.id),
+        adminMentions: publishData.adminMentions || [] // 从publishData中获取adminMentions
       }
 
+      console.log('usePublish.js - handlePublish - 准备创建文章的数据:', articleData)
+
       // 3. 发布文章
-      await createArticle(articleData)
+      const result = await createArticle(articleData)
+      console.log('usePublish.js - handlePublish - 文章创建结果:', result)
 
-      // 4. 发布成功
-      alert('发布成功！')
-      // 清空表单
-      title.value = ''
-      content.value = ''
-      images.value = []
-      mentions.value = []
-      topics.value = []
-      selectedLocation.value = null
-      // 跳转到首页
-      router.push('/')
-
+      return {
+        success: true,
+        data: result.data
+      }
     } catch (error) {
       console.error('发布错误:', error)
-      alert('发布失败：' + error.message)
+      return {
+        success: false,
+        message: error.message || '发布失败'
+      }
     } finally {
       isPublishing.value = false
     }

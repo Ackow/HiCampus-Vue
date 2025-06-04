@@ -54,6 +54,10 @@ const articleSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
+    adminMentions: [{
+        type: String,
+        trim: true
+    }],
     topics: [{
         type: String,
         trim: true,
@@ -70,6 +74,7 @@ articleSchema.index({ topics: 1 }); // 为话题添加索引
 articleSchema.index({ mentionedUsers: 1 }); // 为被艾特用户添加索引
 articleSchema.index({ collectedBy: 1 }); // 为收藏用户添加索引
 articleSchema.index({ likedBy: 1 }); // 为点赞用户添加索引
+articleSchema.index({ adminMentions: 1 });
 
 const Article = mongoose.model('Article', articleSchema);
 

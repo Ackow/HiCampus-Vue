@@ -13,7 +13,7 @@ const handleError = (res, error, message = '服务器错误') => {
 // 注册用户
 const register = async (req, res) => {
     try {
-        const { username, password, nickname, studentId } = req.body;
+        const { username, password, nickname, studentId, college } = req.body;
 
         // 验证必填字段
         if (!username || !password || !nickname) {
@@ -46,6 +46,7 @@ const register = async (req, res) => {
             password,
             nickname,
             studentId,
+            college,
             age: '18',
             gender: 'male',
             avatar: 'default-avatar.jpg',
@@ -72,6 +73,7 @@ const register = async (req, res) => {
                 username: user.username,
                 nickname: user.nickname,
                 studentId: user.studentId,
+                college: user.college,
                 role: user.role,
                 avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
             }
@@ -147,6 +149,7 @@ const getUserInfo = async (req, res) => {
                 username: user.username,
                 nickname: user.nickname,
                 studentId: user.studentId,
+                college: user.college,
                 uid: user.uid,
                 age: user.age,
                 gender: user.gender,
@@ -162,7 +165,7 @@ const getUserInfo = async (req, res) => {
 // 更新用户信息
 const updateUserInfo = async (req, res) => {
     try {
-        const { username, nickname, studentId, age, gender, password } = req.body;
+        const { username, nickname, studentId, age, gender, password, college } = req.body;
         const userId = req.user.userId;
 
         // 构建更新对象
@@ -235,6 +238,11 @@ const updateUserInfo = async (req, res) => {
             updateData.studentId = studentId || null;
         }
 
+        // 处理学院更新
+        if (college !== undefined) {
+            updateData.college = college;
+        }
+
         // 更新用户信息
         const updatedUser = await User.findByIdAndUpdate(
             userId,
@@ -253,6 +261,7 @@ const updateUserInfo = async (req, res) => {
                 username: updatedUser.username,
                 nickname: updatedUser.nickname,
                 studentId: updatedUser.studentId,
+                college: updatedUser.college,
                 age: updatedUser.age,
                 gender: updatedUser.gender,
                 avatar: `http://localhost:3000/uploads/avatars/${updatedUser.avatar}`
@@ -351,6 +360,7 @@ const getUserById = async (req, res) => {
                 username: user.username,
                 nickname: user.nickname,
                 studentId: user.studentId,
+                college: user.college,
                 uid: user.uid,
                 age: user.age,
                 gender: user.gender,

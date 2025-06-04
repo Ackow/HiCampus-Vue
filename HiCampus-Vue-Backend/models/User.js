@@ -53,6 +53,11 @@ const userSchema = new mongoose.Schema({
         trim: true,
         match: [/^\d{8,12}$/, '学号格式不正确']
     },
+    college: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     avatar: { 
         type: String, 
         default: 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
