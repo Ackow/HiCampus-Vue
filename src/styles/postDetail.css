@@ -728,3 +728,518 @@ html {
     font-size: 12px;
     margin-top: 2px;
   }
+
+  .post-mentions {
+    color: #666;
+    font-size: 14px;
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+  
+  .mentioned-user {
+    color: #1890ff;
+    cursor: pointer;
+    margin: 0 4px;
+  }
+  
+  .mentioned-user:hover {
+    text-decoration: underline;
+  }
+  
+  .admin-mention {
+    color: #ff4d4f;
+    margin: 0 4px;
+  }
+  
+  .video-preview {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    background-color: #000;
+  }
+  
+  .detail-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background-color: #000;
+  }
+  
+  .video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+  
+  .play-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+  }
+  
+  .video-duration {
+    color: white;
+    font-size: 14px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  
+  .video-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1005;
+  }
+  
+  .video-preview-container {
+    position: relative;
+    width: 80%;
+    max-width: 1200px;
+    max-height: 80vh;
+  }
+  
+  .preview-video {
+    width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+  }
+  
+  .close-btn {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 32px;
+    cursor: pointer;
+    padding: 8px;
+  }
+  
+  .close-btn:hover {
+    opacity: 0.8;
+  }
+  
+  .replies-list {
+    margin-top: 12px;
+  }
+  
+  .reply-item {
+    display: flex;
+    margin-bottom: 12px;
+  }
+  
+  .reply-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 12px;
+    cursor: pointer;
+  }
+  
+  .reply-content {
+    flex: 1;
+  }
+  
+  .reply-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    gap: 8px;
+    position: relative;
+  }
+  
+  .reply-header .delete-comment-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+    margin-left: auto;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .reply-header .delete-comment-btn:hover {
+    opacity: 1;
+  }
+  
+  .reply-header .btn-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .reply-username {
+    font-weight: 500;
+    color: #333;
+    margin-right: 8px;
+  }
+  
+  .reply-to {
+    color: #666;
+    font-size: 14px;
+    margin-right: 8px;
+  }
+  
+  .reply-to-username {
+    color: #1890ff;
+    cursor: pointer;
+  }
+  
+  .reply-to-username:hover {
+    text-decoration: underline;
+  }
+  
+  .reply-time {
+    color: #999;
+    font-size: 12px;
+  }
+  
+  .reply-text {
+    color: #333;
+    margin: 4px 0;
+    line-height: 1.5;
+  }
+  
+  .reply-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .reply-btn {
+    background: none;
+    border: none;
+    color: #333;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .reply-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+  }
+  
+  .reply-btn:hover {
+    color: #d6d6d6;
+  }
+  
+  .reply-btn:hover .reply-icon {
+    opacity: 1;
+  }
+  
+  .cancel-reply-btn {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 0 8px;
+    font-size: 14px;
+  }
+  
+  .cancel-reply-btn:hover {
+    color: #333;
+  }
+  
+  .comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  
+  .delete-comment-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+    margin-left: auto;
+  }
+  
+  .delete-comment-btn:hover {
+    opacity: 1;
+  }
+  
+  .btn-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .share-actions {
+    position: relative;
+  }
+  
+  .share-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .share-option:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .share-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .post-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-top: 1px solid #eee;
+    margin-top: 16px;
+  }
+  
+  .action-group {
+    display: flex;
+    gap: 24px;
+  }
+  
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .action-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .more-actions {
+    position: relative;
+  }
+  
+  .more-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .more-panel {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 8px;
+    margin-bottom: 8px;
+    z-index: 1000;
+    min-width: 120px;
+  }
+  
+  .more-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    color: #333;
+  }
+  
+  .more-option:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .more-option.delete-option {
+    color: #f56c6c;
+  }
+  
+  .more-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .more-options-actions {
+    position: relative;
+  }
+  
+  .more-options-trigger {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+  }
+  
+  .more-options-trigger:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .more-options-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    padding: 8px 0;
+    min-width: 120px;
+    z-index: 1000;
+    margin-top: 8px;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    color: #333;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .dropdown-item .btn-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .share-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+  }
+  
+  .share-panel {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 320px;
+    padding: 20px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2001;
+  }
+  
+  .share-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .share-panel-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .share-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 10px 0;
+    justify-items: center;
+  }
+  
+  .share-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+  }
+  
+  .share-option:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .share-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .share-option span {
+    font-size: 14px;
+    color: #333;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    position: relative;
+    z-index: 2002;
+  }
+  
+  .close-btn:hover {
+    color: #666;
+  }

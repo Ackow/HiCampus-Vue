@@ -14,7 +14,7 @@
                   <img src="/assets/images/更多设置.svg" alt="更多" class="btn-icon">
                 </div>
                 <div class="more-options-dropdown" v-show="showMoreOptions">
-                  <div class="dropdown-item" @click="handlePostDelete" v-if="isAuthor || isAdmin">
+                  <div class="dropdown-item" @click="handlePostDelete" v-if="isPostAuthor || isAdmin">
                     <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
                     <span>删除文章</span>
                   </div>
@@ -138,7 +138,7 @@
                             回复
                           </button>
                           <button 
-                            v-if="isCommentAuthor(comment) || isAdmin" 
+                            v-if="checkCommentAuthor(comment) || isPostAuthor || isAdmin" 
                             class="delete-comment-btn"
                             @click="confirmDeleteComment(comment)"
                           >
@@ -154,7 +154,7 @@
                               alt="Reply Avatar" 
                               class="reply-avatar"
                               @error="handleAvatarError"
-                              @click="handleUserInfoClick($event, true, null, reply.replyTo._id)"
+                              @click="handleUserInfoClick($event, true, reply)"
                               :style="{ cursor: postDetail.topics?.includes('#吐槽区') ? 'default' : 'pointer' }"
                             >
                             <div class="reply-content">
@@ -172,7 +172,7 @@
                                 </span>
                                 <span class="reply-time">{{ new Date(reply.createdAt).toLocaleString() }}</span>
                                 <button 
-                                  v-if="isCommentAuthor(reply) || isAdmin" 
+                                  v-if="checkCommentAuthor(reply) || isPostAuthor || isAdmin" 
                                   class="delete-comment-btn"
                                   @click="confirmDeleteComment(reply)"
                                 >
@@ -481,127 +481,19 @@ const submitComment = async () => {
 };
 
 // 在 script setup 部分添加权限判断逻辑
-const isAuthor = computed(async () => {
+const isPostAuthor = ref(false);
+const isAdmin = ref(false);
+const isCommentAuthor = ref(false);
+
+// 检查用户权限
+const checkUserPermissions = async () => {
   try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     const response = await fetch(`${baseUrl}/api/user`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return data.user.id === props.postDetail.creatorId;
-    }
-    return false;
-  } catch (error) {
-    console.error('获取用户信息失败:', error);
-    return false;
-  }
-});
-
-const isAdmin = computed(async () => {
-  try {
-    const response = await fetch(`${baseUrl}/api/user`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      console.log('云端用户信息:', data.user);
-      return data.user.role === 'admin';
-    }
-    return false;
-  } catch (error) {
-    console.error('获取用户信息失败:', error);
-    return false;
-  }
-});
-
-// 修改评论作者判断逻辑
-const isCommentAuthor = async (comment) => {
-  try {
-    const response = await fetch(`${baseUrl}/api/user`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      return data.user.id === comment.commenter._id;
-    }
-    return false;
-  } catch (error) {
-    console.error('获取用户信息失败:', error);
-    return false;
-  }
-};
-
-// 修改用户信息点击处理函数
-const handleUserInfoClick = async (event, isComment = false, comment = null, userId = null) => {
-  // 检查是否是吐槽区
-  const isComplaintArea = props.postDetail.topics && props.postDetail.topics.includes('#吐槽区');
-  if (isComplaintArea) {
-    console.log('吐槽区文章，不进行跳转');
-    return;
-  }
-
-  const authorId = isComment ? comment.commenter._id : props.postDetail.creatorId;
-  console.log('作者ID:', authorId);
-  
-  if (!authorId) {
-    console.error('无法获取作者ID');
-    return;
-  }
-
-  try {
-    // 获取当前登录用户信息
-    const response = await fetch(`${baseUrl}/api/user`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error('获取用户信息失败');
-    }
-    
-    const data = await response.json();
-    const currentUser = data.user;
-    console.log('当前用户ID:', currentUser.id);
-    
-    // 先关闭文章详情
-    closeDetail();
-    
-    // 等待一小段时间确保关闭动画完成
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // 判断是否是当前用户
-    if (currentUser.id === authorId) {
-      // 如果是当前用户，跳转到个人主页
-      await router.push({ 
-        name: 'Profile'
-      });
-    } else {
-      // 如果是其他用户，跳转到用户主页
-      await router.push({ 
-        name: 'UserProfile',
-        params: { userId: authorId }
-      });
-    }
-    
-    console.log('路由跳转成功');
-  } catch (error) {
-    console.error('路由跳转失败:', error);
-  }
-};
-
-// 修改删除文章确认函数
-const confirmDelete = async () => {
-  try {
-    const response = await fetch(`${baseUrl}/api/user`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
     
@@ -612,45 +504,46 @@ const confirmDelete = async () => {
     const data = await response.json();
     const currentUser = data.user;
     
-    if (currentUser.id !== props.postDetail.creatorId && currentUser.role !== 'admin') {
-      ElMessage.warning('您没有权限删除此文章');
-      return;
-    }
-
-    ElMessageBox.confirm(
-      '删除后将无法恢复，是否确认删除该文章？',
-      '确认删除',
-      {
-        confirmButtonText: '确认删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-      .then(() => {
-        handleDelete();
-      })
-      .catch(() => {
-        // 用户取消删除
-      });
+    isPostAuthor.value = currentUser.id === props.postDetail.creatorId;
+    isAdmin.value = currentUser.role === 'admin' || currentUser.role === 'superadmin';
   } catch (error) {
-    console.error('获取用户信息失败:', error);
-    ElMessage.error('获取用户信息失败');
+    console.error('获取用户权限失败:', error);
   }
 };
+
+// 检查是否是评论作者
+const checkCommentAuthor = (comment) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+
+    const currentUserId = localStorage.getItem('uid');
+    return currentUserId === comment.commenter._id;
+  } catch (error) {
+    console.error('检查评论作者失败:', error);
+    return false;
+  }
+};
+
+// 在组件挂载时检查权限
+onMounted(() => {
+  checkUserPermissions();
+  document.addEventListener('click', handleClickOutside);
+});
 
 // 修改删除评论确认函数
 const confirmDeleteComment = async (comment) => {
   try {
-    const uid = localStorage.getItem('uid');
-    if (!uid) {
-      ElMessage.error('请先登录');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      ElMessage.warning('请先登录');
       return;
     }
 
     // 获取当前用户信息
     const response = await fetch(`${baseUrl}/api/user`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${token}`
       }
     });
     
@@ -661,9 +554,12 @@ const confirmDeleteComment = async (comment) => {
     const data = await response.json();
     const currentUser = data.user;
 
-    console.log('当前用户信息:', currentUser);
-    if (uid !== comment.commenter._id && currentUser.role !== 'admin' && currentUser.role !== 'superadmin' ) {
-      ElMessage.error('您没有权限删除此评论');
+    // 判断权限：评论作者、文章作者或管理员可以删除
+    const isCommentAuthor = currentUser.id === comment.commenter._id;
+    const canDelete = isCommentAuthor || isPostAuthor.value || isAdmin.value;
+
+    if (!canDelete) {
+      ElMessage.warning('您没有权限删除此评论');
       return;
     }
 
@@ -678,7 +574,6 @@ const confirmDeleteComment = async (comment) => {
     );
 
     if (confirmed) {
-      const token = localStorage.getItem('token');
       await axios.delete(`${baseUrl}/api/articles/${props.postDetail.id}/comments/${comment._id}`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -706,6 +601,42 @@ const confirmDeleteComment = async (comment) => {
   } catch (error) {
     console.error('删除评论失败:', error);
     ElMessage.error('删除评论失败，请重试');
+  }
+};
+
+// 修改删除文章确认函数
+const confirmDelete = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      ElMessage.warning('请先登录');
+      return;
+    }
+
+    // 判断权限：作者或管理员可以删除
+    if (!isPostAuthor.value && !isAdmin.value) {
+      ElMessage.warning('您没有权限删除此文章');
+      return;
+    }
+
+    ElMessageBox.confirm(
+      '删除后将无法恢复，是否确认删除该文章？',
+      '确认删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        handleDelete();
+      })
+      .catch(() => {
+        // 用户取消删除
+      });
+  } catch (error) {
+    console.error('删除文章失败:', error);
+    ElMessage.error('删除文章失败，请重试');
   }
 };
 
@@ -841,522 +772,4 @@ onUnmounted(() => {
 <style scoped>
 @import '../styles/postDetail.css';
 
-.post-mentions {
-  color: #666;
-  font-size: 14px;
-  margin: 8px 0;
-  line-height: 1.5;
-}
-
-.mentioned-user {
-  color: #1890ff;
-  cursor: pointer;
-  margin: 0 4px;
-}
-
-.mentioned-user:hover {
-  text-decoration: underline;
-}
-
-.admin-mention {
-  color: #ff4d4f;
-  margin: 0 4px;
-}
-
-.video-preview {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-  background-color: #000;
-}
-
-.detail-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  background-color: #000;
-}
-
-.video-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-}
-
-.play-icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 8px;
-}
-
-.video-duration {
-  color: white;
-  font-size: 14px;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.video-preview-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1005;
-}
-
-.video-preview-container {
-  position: relative;
-  width: 80%;
-  max-width: 1200px;
-  max-height: 80vh;
-}
-
-.preview-video {
-  width: 100%;
-  max-height: 80vh;
-  object-fit: contain;
-}
-
-.close-btn {
-  position: absolute;
-  top: -40px;
-  right: 0;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 32px;
-  cursor: pointer;
-  padding: 8px;
-}
-
-.close-btn:hover {
-  opacity: 0.8;
-}
-
-.replies-list {
-  margin-top: 12px;
-}
-
-.reply-item {
-  display: flex;
-  margin-bottom: 12px;
-}
-
-.reply-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin-right: 12px;
-  cursor: pointer;
-}
-
-.reply-content {
-  flex: 1;
-}
-
-.reply-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 4px;
-  gap: 8px;
-  position: relative;
-}
-
-.reply-header .delete-comment-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  opacity: 0.6;
-  transition: opacity 0.3s;
-  margin-left: auto;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.reply-header .delete-comment-btn:hover {
-  opacity: 1;
-}
-
-.reply-header .btn-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.reply-username {
-  font-weight: 500;
-  color: #333;
-  margin-right: 8px;
-}
-
-.reply-to {
-  color: #666;
-  font-size: 14px;
-  margin-right: 8px;
-}
-
-.reply-to-username {
-  color: #1890ff;
-  cursor: pointer;
-}
-
-.reply-to-username:hover {
-  text-decoration: underline;
-}
-
-.reply-time {
-  color: #999;
-  font-size: 12px;
-}
-
-.reply-text {
-  color: #333;
-  margin: 4px 0;
-  line-height: 1.5;
-}
-
-.reply-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.reply-btn {
-  background: none;
-  border: none;
-  color: #333;
-  cursor: pointer;
-  padding: 0;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.reply-icon {
-  width: 16px;
-  height: 16px;
-  opacity: 0.8;
-}
-
-.reply-btn:hover {
-  color: #d6d6d6;
-}
-
-.reply-btn:hover .reply-icon {
-  opacity: 1;
-}
-
-.cancel-reply-btn {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 0 8px;
-  font-size: 14px;
-}
-
-.cancel-reply-btn:hover {
-  color: #333;
-}
-
-.comment-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.delete-comment-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  opacity: 0.6;
-  transition: opacity 0.3s;
-  margin-left: auto;
-}
-
-.delete-comment-btn:hover {
-  opacity: 1;
-}
-
-.btn-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.share-actions {
-  position: relative;
-}
-
-.share-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.share-option:hover {
-  background-color: #f5f5f5;
-}
-
-.share-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.post-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-top: 1px solid #eee;
-  margin-top: 16px;
-}
-
-.action-group {
-  display: flex;
-  gap: 24px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: #666;
-  font-size: 14px;
-}
-
-.action-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.more-actions {
-  position: relative;
-}
-
-.more-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.more-panel {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 8px;
-  margin-bottom: 8px;
-  z-index: 1000;
-  min-width: 120px;
-}
-
-.more-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: none;
-  background: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  color: #333;
-}
-
-.more-option:hover {
-  background-color: #f5f5f5;
-}
-
-.more-option.delete-option {
-  color: #f56c6c;
-}
-
-.more-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.more-options-actions {
-  position: relative;
-}
-
-.more-options-trigger {
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.more-options-trigger:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.more-options-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  padding: 8px 0;
-  min-width: 120px;
-  z-index: 1000;
-  margin-top: 8px;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  color: #333;
-}
-
-.dropdown-item:hover {
-  background-color: #f5f5f5;
-}
-
-.dropdown-item:first-child {
-  color: #f56c6c;
-}
-
-.dropdown-item .btn-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.share-panel-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.share-panel {
-  background: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 320px;
-  padding: 20px;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2001;
-}
-
-.share-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.share-panel-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-  width: 100%;
-  text-align: center;
-}
-
-.share-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  padding: 10px 0;
-  justify-items: center;
-}
-
-.share-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 12px;
-  border-radius: 8px;
-  transition: background-color 0.3s;
-}
-
-.share-option:hover {
-  background-color: #f5f5f5;
-}
-
-.share-icon {
-  width: 40px;
-  height: 40px;
-}
-
-.share-option span {
-  font-size: 14px;
-  color: #333;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #999;
-  cursor: pointer;
-  padding: 4px;
-  line-height: 1;
-  position: relative;
-  z-index: 2002;
-}
-
-.close-btn:hover {
-  color: #666;
-}
 </style> 
