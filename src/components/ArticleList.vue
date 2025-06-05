@@ -9,9 +9,31 @@
       >
         {{ category.label }}
       </div>
+      <div class="sort-dropdown" 
+           @mouseenter="showSortPanel = true" 
+           @mouseleave="handleMouseLeave">
+        <div class="sort-button" ref="sortButton">
+          综合
+          <img src="/assets/images/下拉.svg" alt="下拉" class="dropdown-icon">
+        </div>
+        <div v-if="showSortPanel" 
+             class="sort-panel" 
+             :style="panelStyle"
+             @mouseenter="showSortPanel = true"
+             @mouseleave="handleMouseLeave">
+          <div 
+            v-for="option in sortOptions" 
+            :key="option.value"
+            :class="['sort-option', { active: currentSort === option.value }]"
+            @click="handleSortChange(option.value)"
+          >
+            {{ option.label }}
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="content-grid">
+    <div class="content-grid" style="position: relative; z-index: 1;">
       <div v-for="article in filteredArticles" :key="article._id" class="content-card" @click="handleCardClick(article)">
         <div class="card-image">
           <img :src="getArticleImage(article)" 
@@ -60,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, onUnmounted } from 'vue';
 import { useArticleList } from '../scripts/ArticleList.js';
 import PostDetail from '../views/PostDetail.vue';
 import { eventBus } from '../utils/eventBus.js';
@@ -70,6 +92,8 @@ const selectedCategory = ref('all');
 const showPostDetail = ref(false);
 const currentPost = ref(null);
 const searchKeyword = ref('');
+const showSortPanel = ref(false);
+const currentSort = ref('random');
 
 const categories = [
   { label: '全部', value: 'all' },
@@ -80,6 +104,12 @@ const categories = [
   { label: '游戏交流', value: '#游戏交流' },
   { label: '二手闲置', value: '#二手闲置' },
   { label: '竞赛分享', value: '#竞赛分享' }
+];
+
+const sortOptions = [
+  { label: '综合', value: 'random' },
+  { label: '最新', value: 'latest' },
+  { label: '最热', value: 'popular' }
 ];
 
 // 添加随机昵称生成函数
@@ -146,16 +176,43 @@ const handleSearch = async (keyword) => {
 };
 
 const filteredArticles = computed(() => {
-  if (selectedCategory.value === 'all') {
-    return articles.value;
+  let filtered = articles.value;
+  
+  // 先按分类过滤
+  if (selectedCategory.value !== 'all') {
+    filtered = filtered.filter(article => 
+      article.topics && article.topics.includes(selectedCategory.value)
+    );
   }
-  return articles.value.filter(article => 
-    article.topics && article.topics.includes(selectedCategory.value)
-  );
+  
+  // 再按排序方式处理
+  switch (currentSort.value) {
+    case 'latest':
+      filtered = [...filtered].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      break;
+    case 'popular':
+      filtered = [...filtered].sort((a, b) => 
+        (b.likeCount || 0) - (a.likeCount || 0)
+      );
+      break;
+    case 'random':
+    default:
+      filtered = [...filtered].sort(() => Math.random() - 0.5);
+      break;
+  }
+  
+  return filtered;
 });
 
 const handleCategoryChange = (category) => {
   selectedCategory.value = category;
+};
+
+const handleSortChange = (sortType) => {
+  currentSort.value = sortType;
+  showSortPanel.value = false;
 };
 
 const openPostDetail = (article) => {
@@ -239,9 +296,59 @@ const handleArticleDeleted = (articleId) => {
   closePostDetail();
 };
 
+const sortButton = ref(null);
+const panelStyle = ref({});
+
+const updatePanelPosition = () => {
+  if (sortButton.value && showSortPanel.value) {
+    const buttonRect = sortButton.value.getBoundingClientRect();
+    panelStyle.value = {
+      top: `${buttonRect.bottom + 4}px`,
+      right: `${window.innerWidth - buttonRect.right}px`
+    };
+  }
+};
+
+watch(showSortPanel, async (newValue) => {
+  if (newValue) {
+    await nextTick();
+    updatePanelPosition();
+  }
+});
+
 onMounted(() => {
   console.log('ArticleList mounted, articles');
+  window.addEventListener('scroll', updatePanelPosition);
+  window.addEventListener('resize', updatePanelPosition);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updatePanelPosition);
+  window.removeEventListener('resize', updatePanelPosition);
+});
+
+const handleMouseLeave = (event) => {
+  // 检查鼠标是否移到了面板上
+  const panel = document.querySelector('.sort-panel');
+  const dropdown = document.querySelector('.sort-dropdown');
+  
+  if (panel && dropdown) {
+    const panelRect = panel.getBoundingClientRect();
+    const dropdownRect = dropdown.getBoundingClientRect();
+    
+    // 如果鼠标在面板或下拉按钮区域内，保持显示
+    if (
+      (event.clientX >= panelRect.left && event.clientX <= panelRect.right &&
+       event.clientY >= panelRect.top && event.clientY <= panelRect.bottom) ||
+      (event.clientX >= dropdownRect.left && event.clientX <= dropdownRect.right &&
+       event.clientY >= dropdownRect.top && event.clientY <= dropdownRect.bottom)
+    ) {
+      return;
+    }
+  }
+  
+  showSortPanel.value = false;
+};
 
 defineExpose({
   handleSearch
@@ -251,7 +358,79 @@ defineExpose({
 <style scoped>
 @import '../styles/articleList.css';
 
+.article-container {
+  position: relative;
+}
+
 .search-active {
   background-color: #f5f5f5;
+}
+
+.sort-dropdown {
+  position: relative;
+  margin-left: auto;
+  z-index: 1000;
+}
+
+.sort-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: #333;
+  font-size: 1.2rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.sort-button:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s;
+}
+
+.sort-panel {
+  position: fixed;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  min-width: 120px;
+  z-index: 1001;
+  cursor: default;
+  margin-top: -5px;
+  margin-right: -2px;
+}
+
+.sort-option {
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  color: #333;
+  font-size: 14px;
+}
+
+.sort-option:hover {
+  background-color: #f5f5f5;
+}
+
+.sort-option.active {
+  color: #1890ff;
+  background-color: #e6f7ff;
+}
+
+.category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  position: relative;
+  z-index: 999;
 }
 </style> 
