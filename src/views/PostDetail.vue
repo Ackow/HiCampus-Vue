@@ -20,11 +20,10 @@
                   <img src="/assets/images/翻页1.svg" alt="left" class="image-nav-btn-icon">
                 </button>
                 <div class="image-slider">
-                  <div v-if="postDetail.video && postDetail.video.url" class="video-preview" @click="openVideoPreview">
+                  <div v-if="postDetail.video && postDetail.video.url && currentImageIndex === 0" class="video-preview" @click="openVideoPreview">
                     <video 
                       :src="`http://localhost:3000${postDetail.video.url}`"
                       class="detail-video"
-                      :class="{ active: currentImageIndex === 0 }"
                       preload="metadata"
                       muted
                       playsinline

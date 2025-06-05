@@ -41,7 +41,6 @@ export function useArticleList() {
     if (isLoading.value || !hasMore.value) return;
 
     try {
-      console.log('加载文章');
       isLoading.value = true;
       error.value = null;
 
@@ -51,7 +50,6 @@ export function useArticleList() {
       }
       const data = await response.json();
 
-      console.log('文章数据:', data);
 
       if (page === 1) {
         articles.value = data.articles;

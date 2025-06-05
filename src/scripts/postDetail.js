@@ -143,12 +143,15 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
 
   const toggleLike = async () => {
     if (!isLoggedIn()) {
-      alert('请先登录')
+      ElMessage.warning('请先登录')
       return
     }
 
     try {
-      const response = await axios.post(`${baseUrl}/api/articles/${props.postDetail.id}/like`, null, {
+      const method = isLiked.value ? 'delete' : 'post'
+      const response = await axios({
+        method,
+        url: `${baseUrl}/api/articles/${props.postDetail.id}/like`,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -164,12 +167,8 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
       })
     } catch (error) {
       console.error('点赞操作失败:', error)
-      if (error.response?.data?.message?.includes('已经点赞过了') || 
-          error.response?.data?.message?.includes('还没有点赞')) {
-        await checkLikeStatus()
-      } else {
-        alert(error.response?.data?.message || '操作失败，请稍后重试')
-      }
+      await checkLikeStatus()
+      ElMessage.error(error.response?.data?.message || '操作失败，请稍后重试')
     }
   }
 
@@ -197,12 +196,15 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
 
   const toggleCollect = async () => {
     if (!isLoggedIn()) {
-      alert('请先登录')
+      ElMessage.warning('请先登录')
       return
     }
 
     try {
-      const response = await axios.post(`${baseUrl}/api/articles/${props.postDetail.id}/collect`, null, {
+      const method = isCollected.value ? 'delete' : 'post'
+      const response = await axios({
+        method,
+        url: `${baseUrl}/api/articles/${props.postDetail.id}/collect`,
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -218,12 +220,8 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
       })
     } catch (error) {
       console.error('收藏操作失败:', error)
-      if (error.response?.data?.message?.includes('已经收藏过了') || 
-          error.response?.data?.message?.includes('还没有收藏')) {
-        await checkCollectStatus()
-      } else {
-        alert(error.response?.data?.message || '操作失败，请稍后重试')
-      }
+      await checkCollectStatus()
+      ElMessage.error(error.response?.data?.message || '操作失败，请稍后重试')
     }
   }
 

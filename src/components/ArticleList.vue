@@ -76,8 +76,6 @@ const categories = [
   { label: '校园生活', value: '#校园生活' },
   { label: '学习交流', value: '#学习交流' },
   { label: '社团活动', value: '#社团活动' },
-  // { label: '美食', value: '#美食' },
-  // { label: '校园风景', value: '#校园风景' },
   { label: '吐槽区', value: '#吐槽区' },
   { label: '游戏交流', value: '#游戏交流' },
   { label: '二手闲置', value: '#二手闲置' },
@@ -124,11 +122,6 @@ const getArticleImage = (article) => {
   // 优先使用视频预览图
   if (article.video && article.video.thumbnail) {
     return article.video.thumbnail;
-  }
-  
-  // 其次使用视频第一帧作为预览图
-  if (article.video && article.video.url) {
-    return article.video.url;
   }
 
   // 最后使用图片
@@ -247,7 +240,7 @@ const handleArticleDeleted = (articleId) => {
 };
 
 onMounted(() => {
-  console.log('ArticleList mounted, articles:', articles.value);
+  console.log('ArticleList mounted, articles');
 });
 
 defineExpose({

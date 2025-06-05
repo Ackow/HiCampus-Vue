@@ -125,24 +125,21 @@ const hasImages = (note) => {
 
 // 获取图片URL
 const getImageUrl = (note) => {
-  if (!hasImages(note)) {
-    return '';
+  if (note.video && note.video.thumbnail) {
+    return note.video.thumbnail;
   }
-  
-  const image = note.images[0];
-  // console.log('处理图片数据:', image);
-  
-  // 如果图片是对象，尝试获取filename
-  if (typeof image === 'object' && image !== null) {
-    return `http://localhost:3000/uploads/images/${image.filename || image}`;
+
+  // 最后使用图片
+  if (note.images && note.images.length > 0) {
+    const imagePath = note.images[0];
+    // 如果已经是完整URL，直接返回
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // 如果是相对路径，添加服务器地址
+    return `http://localhost:3000/uploads/images/${imagePath}`;
   }
-  
-  // 如果图片是字符串，直接使用
-  if (typeof image === 'string') {
-    return `http://localhost:3000/uploads/images/${image}`;
-  }
-  
-  return '';
+  return null;
 }
 
 // 处理图片加载错误
@@ -152,7 +149,6 @@ const handleImageError = (event) => {
 }
 
 const showPostDetail = (post) => {
-  // console.log('点击的文章数据:', post);
   if (!post) {
     console.error('文章数据为空');
     return;
@@ -176,6 +172,9 @@ const showPostDetail = (post) => {
     ? `http://localhost:3000/uploads/avatars/${post.creator.avatar}`
     : 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
 
+  // 确保点赞状态正确
+  const isLiked = post.isLiked || (post.likedBy && post.likedBy.includes(auth.user?._id));
+
   selectedPost.value = {
     id: post._id,
     title: post.title,
@@ -187,12 +186,12 @@ const showPostDetail = (post) => {
     collectCount: post.collectCount || 0,
     commentCount: post.commentCount || 0,
     createdAt: post.createdAt,
-    isLiked: post.isLiked || false,
+    isLiked: isLiked,
     isCollected: post.isCollected || false,
     creatorId: post.creator._id,
-    location: post.location || null
+    location: post.location || null,
+    video: post.video || null
   }
-  console.log('处理后的文章详情数据:', selectedPost.value);
   showDetail.value = true;
 }
 
@@ -285,9 +284,6 @@ watch(activeTab, async (newTab) => {
 const isCurrentUser = computed(() => {
   const currentUser = auth.getUserInfo();
   const viewedUserId = route.params.userId;
-  console.log('当前用户信息:', currentUser);
-  console.log('当前用户ID:', currentUser?._id);
-  console.log('查看的用户ID:', viewedUserId);
   return !viewedUserId || currentUser?._id === viewedUserId;
 });
 
@@ -296,7 +292,6 @@ const loadUserData = async () => {
   try {
     isLoading.value = true;
     const userId = route.params.userId;
-    console.log('loadUserData - 路由参数userId:', userId);
     
     if (userId) {
       // 查看其他用户的个人主页
