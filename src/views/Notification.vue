@@ -352,7 +352,7 @@ export default {
       }
     };
 
-    // 处理删除所有消息
+    // 处理删除所有消息x
     const handleDeleteAll = async () => {
       try {
         deletingAll.value = true;

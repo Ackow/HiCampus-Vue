@@ -9,9 +9,21 @@
                 <img :src="getUserDisplayInfo(postDetail).avatar" alt="User Avatar" class="detail-avatar">
                 <span class="detail-username">{{ getUserDisplayInfo(postDetail).nickname }}</span>
               </div>
-              <button class="more-options-btn" @click="confirmDelete" v-if="isAuthor || isAdmin">
-                <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
-              </button>
+              <div class="more-options-actions">
+                <div class="more-options-trigger" @click="toggleMoreOptions">
+                  <img src="/assets/images/更多设置.svg" alt="更多" class="btn-icon">
+                </div>
+                <div class="more-options-dropdown" v-show="showMoreOptions">
+                  <div class="dropdown-item" @click="handlePostDelete" v-if="isAuthor || isAdmin">
+                    <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
+                    <span>删除文章</span>
+                  </div>
+                  <div class="dropdown-item" @click="showSharePanel = true; showMoreOptions = false">
+                    <img src="/assets/images/分享.svg" alt="分享" class="btn-icon">
+                    <span>分享</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="detail-content">
@@ -142,7 +154,7 @@
                               alt="Reply Avatar" 
                               class="reply-avatar"
                               @error="handleAvatarError"
-                              @click="handleUserInfoClick($event, true, reply)"
+                              @click="handleUserInfoClick($event, true, null, reply.replyTo._id)"
                               :style="{ cursor: postDetail.topics?.includes('#吐槽区') ? 'default' : 'pointer' }"
                             >
                             <div class="reply-content">
@@ -261,6 +273,29 @@
       :initial-index="previewImageIndex"
       @close="closeImagePreview"
     />
+
+    <!-- 分享面板 -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div class="share-panel-overlay" v-if="showSharePanel" @click.self="showSharePanel = false">
+          <div class="share-panel">
+            <div class="share-panel-header">
+              <h3>分享到</h3>
+            </div>
+            <div class="share-options">
+              <div class="share-option" @click="shareToWeChat">
+                <img src="/assets/images/微信.svg" alt="微信" class="share-icon">
+                <span>微信</span>
+              </div>
+              <div class="share-option" @click="shareToQQ">
+                <img src="/assets/images/QQ.svg" alt="QQ" class="share-icon">
+                <span>QQ</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -270,7 +305,7 @@ import ImagePreview from '../components/ImagePreview.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useAuth } from '../utils/useAuth'
 
 const router = useRouter();
@@ -691,6 +726,116 @@ const formatDuration = (seconds) => {
   const remainingSeconds = Math.floor(seconds % 60)
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
+
+const showSharePanel = ref(false);
+
+// 生成分享链接
+const generateShareUrl = () => {
+  const url = `${window.location.origin}/post/${props.postDetail.id}`;
+  const title = props.postDetail.title;
+  const desc = props.postDetail.description;
+  return {
+    url,
+    title,
+    desc
+  };
+};
+
+// 分享到微信
+const shareToWeChat = () => {
+  const { url, title, desc } = generateShareUrl();
+  // 使用微信分享接口
+  if (window.wx) {
+    window.wx.ready(() => {
+      window.wx.updateAppMessageShareData({
+        title: title,
+        desc: desc,
+        link: url,
+        imgUrl: props.postDetail.images?.[0] || '',
+        success: () => {
+          ElMessage.success('分享成功');
+        }
+      });
+    });
+  } else {
+    // 如果没有微信SDK，使用二维码方式
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+    window.open(qrCodeUrl, '_blank');
+  }
+  showSharePanel.value = false;
+};
+
+// 分享到QQ
+const shareToQQ = () => {
+  const { url, title, desc } = generateShareUrl();
+  const shareUrl = `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}&summary=${encodeURIComponent(desc)}`;
+  window.open(shareUrl, '_blank');
+  showSharePanel.value = false;
+};
+
+const showMorePanel = ref(false);
+
+// 处理分享
+const handleShare = () => {
+  showMorePanel.value = false;
+  showSharePanel.value = true;
+};
+
+// 处理删除
+const handlePostDelete = async () => {
+  try {
+    showMorePanel.value = false;
+    const confirmed = await ElMessageBox.confirm(
+      '确定要删除这篇文章吗？此操作不可恢复',
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    );
+
+    if (confirmed) {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${baseUrl}/api/articles/${props.postDetail.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      ElMessage.success('文章已删除');
+      emit('close');
+    }
+  } catch (error) {
+    console.error('删除文章失败:', error);
+    ElMessage.error('删除文章失败，请重试');
+  }
+};
+
+const showMoreOptions = ref(false);
+
+// 切换下拉框显示状态
+const toggleMoreOptions = () => {
+  showMoreOptions.value = !showMoreOptions.value;
+};
+
+// 点击外部关闭下拉框
+const handleClickOutside = (event) => {
+  const moreOptions = document.querySelector('.more-options-actions');
+  if (moreOptions && !moreOptions.contains(event.target)) {
+    showMoreOptions.value = false;
+  }
+};
+
+// 在组件挂载时添加点击事件监听
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+// 在组件卸载时移除点击事件监听
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -961,5 +1106,257 @@ const formatDuration = (seconds) => {
 .btn-icon {
   width: 16px;
   height: 16px;
+}
+
+.share-actions {
+  position: relative;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.share-option:hover {
+  background-color: #f5f5f5;
+}
+
+.share-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.post-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid #eee;
+  margin-top: 16px;
+}
+
+.action-group {
+  display: flex;
+  gap: 24px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #666;
+  font-size: 14px;
+}
+
+.action-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.more-actions {
+  position: relative;
+}
+
+.more-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.more-panel {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  margin-bottom: 8px;
+  z-index: 1000;
+  min-width: 120px;
+}
+
+.more-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  color: #333;
+}
+
+.more-option:hover {
+  background-color: #f5f5f5;
+}
+
+.more-option.delete-option {
+  color: #f56c6c;
+}
+
+.more-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.more-options-actions {
+  position: relative;
+}
+
+.more-options-trigger {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.3s;
+}
+
+.more-options-trigger:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.more-options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  min-width: 120px;
+  z-index: 1000;
+  margin-top: 8px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  color: #333;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+.dropdown-item:first-child {
+  color: #f56c6c;
+}
+
+.dropdown-item .btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.share-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.share-panel {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 320px;
+  padding: 20px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2001;
+}
+
+.share-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.share-panel-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  width: 100%;
+  text-align: center;
+}
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 10px 0;
+  justify-items: center;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.share-option:hover {
+  background-color: #f5f5f5;
+}
+
+.share-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.share-option span {
+  font-size: 14px;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  position: relative;
+  z-index: 2002;
+}
+
+.close-btn:hover {
+  color: #666;
 }
 </style> 
