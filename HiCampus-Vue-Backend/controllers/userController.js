@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const Message = require('../models/Message');
 
 // 错误处理中间件
 const handleError = (res, error, message = '服务器错误') => {
@@ -126,7 +127,7 @@ const login = async (req, res) => {
                 age: user.age,
                 gender: user.gender,
                 role: user.role,
-                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
+                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`,
             }
         });
     } catch (error) {
@@ -154,7 +155,7 @@ const getUserInfo = async (req, res) => {
                 age: user.age,
                 gender: user.gender,
                 role: user.role,
-                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
+                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`,
             }
         });
     } catch (error) {
@@ -264,7 +265,7 @@ const updateUserInfo = async (req, res) => {
                 college: updatedUser.college,
                 age: updatedUser.age,
                 gender: updatedUser.gender,
-                avatar: `http://localhost:3000/uploads/avatars/${updatedUser.avatar}`
+                avatar: `http://localhost:3000/uploads/avatars/${updatedUser.avatar}`,
             }
         });
     } catch (error) {
@@ -364,11 +365,205 @@ const getUserById = async (req, res) => {
                 uid: user.uid,
                 age: user.age,
                 gender: user.gender,
-                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`
+                avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`,
+                followingCount: user.following.length,
+                followerCount: user.followers.length
             }
         });
     } catch (error) {
         handleError(res, error, '获取用户信息错误');
+    }
+};
+
+// 关注用户
+const followUser = async (req, res) => {
+    try {
+        const followerId = req.user.userId;
+        const { userId } = req.params;
+
+        // 不能关注自己
+        if (followerId === userId) {
+            return res.status(400).json({ message: '不能关注自己' });
+        }
+
+        const userToFollow = await User.findById(userId);
+        const follower = await User.findById(followerId);
+
+        if (!userToFollow || !follower) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 检查是否已经关注
+        if (follower.following.includes(userId)) {
+            return res.status(400).json({ message: '已经关注该用户' });
+        }
+
+        // 添加关注关系
+        await User.findByIdAndUpdate(followerId, {
+            $push: { following: userId }
+        });
+
+        await User.findByIdAndUpdate(userId, {
+            $push: { followers: followerId }
+        });
+
+        // 发送关注消息
+        const message = {
+            sender: followerId,
+            receiver: userId,
+            type: 'follow',
+            content: `${follower.nickname} 关注了你`,
+            createdAt: new Date()
+        };
+
+        // 将消息保存到数据库
+        await Message.create(message);
+
+        // 获取更新后的关注者和粉丝数量
+        const updatedUser = await User.findById(userId);
+        const followerCount = updatedUser.followers.length;
+        const followingCount = updatedUser.following.length;
+
+        res.json({
+            message: '关注成功',
+            followerCount,
+            followingCount,
+            isFollowing: true
+        });
+    } catch (error) {
+        console.error('关注用户失败:', error);
+        handleError(res, error, '关注用户失败');
+    }
+};
+
+// 取消关注
+const unfollowUser = async (req, res) => {
+    try {
+        const followerId = req.user.userId;
+        const { userId } = req.params;
+
+        const userToUnfollow = await User.findById(userId);
+        const follower = await User.findById(followerId);
+
+        if (!userToUnfollow || !follower) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 检查是否已经关注
+        if (!follower.following.includes(userId)) {
+            return res.status(400).json({ message: '未关注该用户' });
+        }
+
+        // 移除关注关系
+        await User.findByIdAndUpdate(followerId, {
+            $pull: { following: userId }
+        });
+
+        await User.findByIdAndUpdate(userId, {
+            $pull: { followers: followerId }
+        });
+
+        // 获取更新后的关注者和粉丝数量
+        const updatedUser = await User.findById(userId);
+        const followerCount = updatedUser.followers.length;
+        const followingCount = updatedUser.following.length;
+
+        res.json({
+            message: '取消关注成功',
+            followerCount,
+            followingCount,
+            isFollowing: false
+        });
+    } catch (error) {
+        console.error('取消关注失败:', error);
+        handleError(res, error, '取消关注失败');
+    }
+};
+
+// 获取用户的关注列表
+const getFollowing = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUserId = req.user.userId; // 获取当前登录用户ID
+
+        const user = await User.findById(userId)
+            .populate('following', 'nickname avatar uid')
+            .select('following');
+
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 获取当前用户的关注列表
+        const currentUser = await User.findById(currentUserId).select('following');
+
+        const following = user.following.map(user => ({
+            id: user._id,
+            nickname: user.nickname,
+            avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`,
+            uid: user.uid,
+            isFollowing: currentUser.following.includes(user._id) // 添加关注状态
+        }));
+
+        res.json({ 
+            following,
+            followingCount: following.length // 添加关注数量
+        });
+    } catch (error) {
+        handleError(res, error, '获取关注列表失败');
+    }
+};
+
+// 获取用户的粉丝列表
+const getFollowers = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUserId = req.user.userId; // 获取当前登录用户ID
+
+        const user = await User.findById(userId)
+            .populate('followers', 'nickname avatar uid')
+            .select('followers');
+
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 获取当前用户的关注列表
+        const currentUser = await User.findById(currentUserId).select('following');
+
+        const followers = user.followers.map(user => ({
+            id: user._id,
+            nickname: user.nickname,
+            avatar: `http://localhost:3000/uploads/avatars/${user.avatar}`,
+            uid: user.uid,
+            isFollowing: currentUser.following.includes(user._id) // 添加关注状态
+        }));
+
+        res.json({ 
+            followers,
+            followerCount: followers.length // 添加粉丝数量
+        });
+    } catch (error) {
+        handleError(res, error, '获取粉丝列表失败');
+    }
+};
+
+// 检查关注状态
+const checkFollowStatus = async (req, res) => {
+    try {
+        const followerId = req.user.userId;
+        const { userId } = req.params;
+
+        const follower = await User.findById(followerId);
+        if (!follower) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        const isFollowing = follower.following.includes(userId);
+
+        res.json({ isFollowing });
+    } catch (error) {
+        handleError(res, error, '检查关注状态失败');
     }
 };
 
@@ -379,5 +574,10 @@ module.exports = {
     updateUserInfo,
     uploadAvatar,
     searchUsers,
-    getUserById
+    getUserById,
+    followUser,
+    unfollowUser,
+    getFollowing,
+    getFollowers,
+    checkFollowStatus
 }; 

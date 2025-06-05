@@ -213,9 +213,11 @@ import ImagePreview from '../components/ImagePreview.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useAuth } from '../utils/useAuth'
 
 const router = useRouter();
+const { getUserInfo } = useAuth();
 const baseUrl = 'http://localhost:3000';
 
 const props = defineProps({
@@ -290,12 +292,6 @@ const {
   showDeleteConfirm,
   showDeleteCommentConfirm,
   commentToDelete,
-  isAuthor,
-  isAdmin,
-  isLiked,
-  likeCount,
-  isCollected,
-  collectCount,
   previewImageIndex,
   showImagePreview,
   mentionedUsers,
@@ -311,12 +307,72 @@ const {
   toggleCollect,
   submitComment,
   handleDelete,
-  isCommentAuthor,
   showDeleteCommentConfirmDialog,
-  handleDeleteComment
+  handleDeleteComment,
+  isLiked,
+  likeCount,
+  isCollected,
+  collectCount
 } = usePostDetail(props, emit)
 
-// 添加用户信息点击处理函数
+// 在 script setup 部分添加权限判断逻辑
+const isAuthor = computed(async () => {
+  try {
+    const response = await fetch(`${baseUrl}/api/user`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.user.id === props.postDetail.creatorId;
+    }
+    return false;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    return false;
+  }
+});
+
+const isAdmin = computed(async () => {
+  try {
+    const response = await fetch(`${baseUrl}/api/user`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      console.log('云端用户信息:', data.user);
+      return data.user.role === 'admin';
+    }
+    return false;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    return false;
+  }
+});
+
+// 修改评论作者判断逻辑
+const isCommentAuthor = async (comment) => {
+  try {
+    const response = await fetch(`${baseUrl}/api/user`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.user.id === comment.commenter._id;
+    }
+    return false;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    return false;
+  }
+};
+
+// 修改用户信息点击处理函数
 const handleUserInfoClick = async (event, isComment = false, comment = null, userId = null) => {
   // 检查是否是吐槽区
   const isComplaintArea = props.postDetail.topics && props.postDetail.topics.includes('#吐槽区');
@@ -333,11 +389,22 @@ const handleUserInfoClick = async (event, isComment = false, comment = null, use
     return;
   }
 
-  // 获取当前登录用户信息
-  const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
-  console.log('当前用户ID:', currentUser.id);
-  
   try {
+    // 获取当前登录用户信息
+    const response = await fetch(`${baseUrl}/api/user`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('获取用户信息失败');
+    }
+    
+    const data = await response.json();
+    const currentUser = data.user;
+    console.log('当前用户ID:', currentUser.id);
+    
     // 先关闭文章详情
     closeDetail();
     
@@ -364,42 +431,88 @@ const handleUserInfoClick = async (event, isComment = false, comment = null, use
   }
 };
 
-// 确认删除文章
-const confirmDelete = () => {
-  ElMessageBox.confirm(
-    '删除后将无法恢复，是否确认删除该文章？',
-    '确认删除',
-    {
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
-    .then(() => {
-      handleDelete();
-    })
-    .catch(() => {
-      // 用户取消删除
+// 修改删除文章确认函数
+const confirmDelete = async () => {
+  try {
+    const response = await fetch(`${baseUrl}/api/user`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
     });
+    
+    if (!response.ok) {
+      throw new Error('获取用户信息失败');
+    }
+    
+    const data = await response.json();
+    const currentUser = data.user;
+    
+    if (currentUser.id !== props.postDetail.creatorId && currentUser.role !== 'admin') {
+      ElMessage.warning('您没有权限删除此文章');
+      return;
+    }
+
+    ElMessageBox.confirm(
+      '删除后将无法恢复，是否确认删除该文章？',
+      '确认删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        handleDelete();
+      })
+      .catch(() => {
+        // 用户取消删除
+      });
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    ElMessage.error('获取用户信息失败');
+  }
 };
 
-// 确认删除评论
-const confirmDeleteComment = (comment) => {
-  ElMessageBox.confirm(
-    '删除后将无法恢复，是否确认删除该评论？',
-    '确认删除',
-    {
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
-    .then(() => {
-      handleDeleteComment(comment);
-    })
-    .catch(() => {
-      // 用户取消删除
+// 修改删除评论确认函数
+const confirmDeleteComment = async (comment) => {
+  try {
+    const response = await fetch(`${baseUrl}/api/user`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
     });
+    
+    if (!response.ok) {
+      throw new Error('获取用户信息失败');
+    }
+    
+    const data = await response.json();
+    const currentUser = data.user;
+    
+    if (currentUser.id !== comment.commenter._id && currentUser.role !== 'admin') {
+      ElMessage.warning('您没有权限删除此评论');
+      return;
+    }
+
+    ElMessageBox.confirm(
+      '删除后将无法恢复，是否确认删除该评论？',
+      '确认删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+      .then(() => {
+        handleDeleteComment(comment);
+      })
+      .catch(() => {
+        // 用户取消删除
+      });
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    ElMessage.error('获取用户信息失败');
+  }
 };
 
 // 添加视频预览相关的状态

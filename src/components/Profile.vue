@@ -13,6 +13,14 @@
             <a class="edit-nickname-btn" @click="handleEditClick" v-if="isCurrentUser">
               <img src="/assets/images/编辑.svg" alt="编辑" class="edit-icon">
             </a>
+            <button 
+              v-if="!isCurrentUser" 
+              class="follow-btn" 
+              :class="{ 'following': userInfo.isFollowing }"
+              @click="handleFollow"
+            >
+              {{ userInfo.isFollowing ? '已关注' : '关注' }}
+            </button>
           </div>
           <div class="profile-meta">
             <div class="profile-meta-item">嗨号：{{ userInfo.uid }}</div>
@@ -22,6 +30,16 @@
           <div class="profile-tags">
             <img :src="userInfo.gender === 'male' ? './assets/images/男.svg' : './assets/images/女.svg'" alt="性别" class="profile-gender">
             <span class="profile-age">{{ userInfo.age }}岁</span>
+          </div>
+          <div class="profile-stats">
+            <span class="stat-item" @click="handleFollowingClick">
+              <span class="stat-label">关注</span>
+              <span class="stat-value">{{ userInfo.followingCount || 0 }}</span>
+            </span>
+            <span class="stat-item" @click="handleFollowersClick">
+              <span class="stat-label">粉丝</span>
+              <span class="stat-value">{{ userInfo.followerCount || 0 }}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -83,6 +101,66 @@
       @update-like-count="handleLikeUpdate"
       @update-collect-count="handleCollectUpdate"
     />
+
+    <!-- 添加关注列表对话框 -->
+    <el-dialog
+      v-model="showFollowingList"
+      title="关注列表"
+      width="30%"
+      :before-close="() => showFollowingList = false"
+    >
+      <div class="user-list">
+        <div v-if="followingList.length === 0" class="empty-list">
+          暂无关注
+        </div>
+        <div v-else class="user-item" v-for="user in followingList" :key="user._id">
+          <div class="user-info" @click="navigateToUserProfile(user._id)">
+            <img :src="user.avatar" 
+                 :alt="user.nickname" 
+                 class="user-avatar">
+            <span class="user-nickname">{{ user.nickname }}</span>
+          </div>
+          <button 
+            v-if="user._id !== uid"
+            class="list-follow-btn" 
+            :class="{ 'following': user.isFollowing }"
+            @click.stop="handleListFollow(user)"
+          >
+            {{ user.isFollowing ? '已关注' : '关注' }}
+          </button>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 添加粉丝列表对话框 -->
+    <el-dialog
+      v-model="showFollowersList"
+      title="粉丝列表"
+      width="30%"
+      :before-close="() => showFollowersList = false"
+    >
+      <div class="user-list">
+        <div v-if="followersList.length === 0" class="empty-list">
+          暂无粉丝
+        </div>
+        <div v-else class="user-item" v-for="user in followersList" :key="user._id">
+          <div class="user-info" @click="navigateToUserProfile(user._id)">
+            <img :src="user.avatar" 
+                 :alt="user.nickname" 
+                 class="user-avatar">
+            <span class="user-nickname">{{ user.nickname }}</span>
+          </div>
+          <button 
+            v-if="user._id !== uid"
+            class="list-follow-btn" 
+            :class="{ 'following': user.isFollowing }"
+            @click.stop="handleListFollow(user)"
+          >
+            {{ user.isFollowing ? '已关注' : '关注' }}
+          </button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -92,10 +170,13 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useAuth } from '../utils/useAuth.js'
 import { useRouter, useRoute } from 'vue-router'
 import PostDetail from '../views/PostDetail.vue'
+import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 const router = useRouter();
 const route = useRoute();
 const auth = useAuth();
+const uid = localStorage.getItem('uid');
 
 const {
   userInfo,
@@ -111,12 +192,22 @@ const {
   fetchUserInfo,
   fetchUserFavorites,
   fetchUserNotes,
-  fetchUserLikes
+  fetchUserLikes,
+  handleLikeUpdate,
+  handleCollectUpdate,
+  followUser,
+  unfollowUser
 } = useProfileData()
 
 // PostDetail 相关状态
 const showDetail = ref(false)
 const selectedPost = ref(null)
+
+// 添加关注和粉丝列表的状态
+const showFollowingList = ref(false)
+const showFollowersList = ref(false)
+const followingList = ref([])
+const followersList = ref([])
 
 // 检查文章是否有图片
 const hasImages = (note) => {
@@ -212,50 +303,123 @@ const handleEditClick = () => {
   router.push({ name: 'EditProfile' });
 }
 
-// 处理点赞更新
-const handleLikeUpdate = (data) => {
-  // console.log('收到点赞更新:', data);
-  const { articleId, likeCount, isLiked } = data;
-  
-  // 更新所有相关列表中的文章数据
-  [notes.value, favorites.value, likes.value].forEach(list => {
-    const article = list.find(item => item._id === articleId);
-    if (article) {
-      article.likeCount = likeCount;
-      article.isLiked = isLiked;
-    }
-  });
-}
+// 处理关注/取消关注
+const handleFollow = async () => {
+  if (!auth.isAuthenticated()) {
+    ElMessage.warning('请先登录');
+    return;
+  }
 
-// 处理收藏更新
-const handleCollectUpdate = (data) => {
-  console.log('收到收藏更新:', data);
-  const { articleId, collectCount, isCollected } = data;
-  
-  // 更新所有相关列表中的文章数据
-  [notes.value, favorites.value, likes.value].forEach(list => {
-    const article = list.find(item => item._id === articleId);
-    if (article) {
-      article.collectCount = collectCount;
-      article.isCollected = isCollected;
-      
-      // 如果是取消收藏，从收藏列表中移除
-      if (!isCollected && list === favorites.value) {
-        const index = favorites.value.findIndex(item => item._id === articleId);
-        if (index !== -1) {
-          console.log('从收藏列表中移除文章:', articleId);
-          favorites.value.splice(index, 1);
+  try {
+    const userId = route.params.userId;
+    if (!userId) return;
+
+    if (userInfo.value.isFollowing) {
+      const result = await unfollowUser(userId);
+      if (result) {
+        userInfo.value.isFollowing = false;
+        userInfo.value.followerCount = result.followerCount;
+        // 更新当前用户的关注数
+        const currentUser = auth.getUserInfo();
+        if (currentUser) {
+          currentUser.followingCount = (currentUser.followingCount || 0) - 1;
+          auth.updateUserInfo(currentUser);
         }
       }
+      ElMessage.success('已取消关注');
+    } else {
+      const result = await followUser(userId);
+      if (result) {
+        userInfo.value.isFollowing = true;
+        userInfo.value.followerCount = result.followerCount;
+        // 更新当前用户的关注数
+        const currentUser = auth.getUserInfo();
+        if (currentUser) {
+          currentUser.followingCount = (currentUser.followingCount || 0) + 1;
+          auth.updateUserInfo(currentUser);
+        }
+      }
+      ElMessage.success('关注成功');
     }
-  });
-
-  // 如果当前在收藏标签页，重新获取收藏列表
-  if (activeTab.value === 'favorites') {
-    console.log('当前在收藏标签页，重新获取收藏列表');
-    fetchUserFavorites();
+  } catch (error) {
+    console.error('关注操作失败:', error);
+    ElMessage.error('操作失败，请稍后重试');
   }
-}
+};
+
+// 获取关注列表
+const fetchFollowingList = async (userId) => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/user/${userId}/following`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      followingList.value = data.following.map(user => ({
+        ...user,
+        _id: user.id || user._id,
+        isFollowing: true
+      }));
+      // 更新关注数
+      if (userInfo.value) {
+        userInfo.value.followingCount = data.followingCount;
+        console.log('更新关注数:', data.followingCount);
+      }
+    }
+  } catch (error) {
+    console.error('获取关注列表失败:', error);
+    ElMessage.error('获取关注列表失败');
+  }
+};
+
+// 获取粉丝列表
+const fetchFollowersList = async (userId) => {
+  try {
+    const response = await fetch(`http://localhost:3000/api/user/${userId}/followers`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      followersList.value = data.followers.map(user => ({
+        ...user,
+        _id: user.id || user._id,
+        isFollowing: user.isFollowing || false
+      }));
+      // 更新粉丝数
+      if (userInfo.value) {
+        userInfo.value.followerCount = data.followerCount;
+        console.log('更新粉丝数:', data.followerCount);
+      }
+    }
+  } catch (error) {
+    console.error('获取粉丝列表失败:', error);
+    ElMessage.error('获取粉丝列表失败');
+  }
+};
+
+// 处理点击关注数
+const handleFollowingClick = async () => {
+  const userId = route.params.userId || userInfo.value?._id;
+  if (userId !== uid) return;
+  
+  await fetchFollowingList(uid);
+  showFollowingList.value = true;
+};
+
+// 处理点击粉丝数
+const handleFollowersClick = async () => {
+  const userId = route.params.userId || userInfo.value?._id;
+  if (userId !== uid) return;
+  
+  await fetchFollowersList(uid);
+  showFollowersList.value = true;
+};
 
 // 监听标签页变化
 watch(activeTab, async (newTab) => {
@@ -280,8 +444,8 @@ watch(activeTab, async (newTab) => {
   }
 });
 
-// 修改 isCurrentUser 计算属性
-const isCurrentUser = computed(() => {
+  // 修改 isCurrentUser 计算属性
+  const isCurrentUser = computed(() => {
   const currentUser = auth.getUserInfo();
   const viewedUserId = route.params.userId;
   return !viewedUserId || currentUser?._id === viewedUserId;
@@ -298,12 +462,22 @@ const loadUserData = async () => {
       const user = await fetchUserInfo(userId);
       if (user) {
         await fetchUserNotes(userId);
+        // 获取关注和粉丝数量
+        await fetchFollowingList(userId);
+        await fetchFollowersList(userId);
       } else {
         error.value = '获取用户信息失败';
       }
     } else {
       // 查看自己的个人主页
       await initData();
+      
+      // 获取关注和粉丝数量
+      const currentUserId = localStorage.getItem('uid');
+      if (currentUserId) {
+        await fetchFollowingList(currentUserId);
+        await fetchFollowersList(currentUserId);
+      }
       
       // 根据当前标签页加载相应数据
       switch (activeTab.value) {
@@ -361,9 +535,203 @@ onUnmounted(() => {
 });
 
 defineExpose({ initData })
+
+// 在 script setup 部分添加处理函数
+const handleListFollow = async (user) => {
+  if (!auth.isAuthenticated()) {
+    ElMessage.warning('请先登录');
+    return;
+  }
+
+  // 检查用户ID是否存在，同时支持id和_id字段
+  const targetUserId = user?.id || user?._id;
+  if (!targetUserId) {
+    console.error('用户ID不存在:', user);
+    ElMessage.error('操作失败：用户信息不完整');
+    return;
+  }
+
+  try {
+    if (user.isFollowing) {
+      const result = await unfollowUser(targetUserId);
+      if (result) {
+        user.isFollowing = false;
+        // 更新粉丝数
+        if (userInfo.value) {
+          userInfo.value.followerCount = result.followerCount;
+        }
+        // 更新当前用户的关注数
+        const currentUser = auth.getUserInfo();
+        if (currentUser) {
+          currentUser.followingCount = (currentUser.followingCount || 0) - 1;
+          auth.updateUserInfo(currentUser);
+        }
+      }
+      ElMessage.success('已取消关注');
+    } else {
+      const result = await followUser(targetUserId);
+      if (result) {
+        user.isFollowing = true;
+        // 更新粉丝数
+        if (userInfo.value) {
+          userInfo.value.followerCount = result.followerCount;
+        }
+        // 更新当前用户的关注数
+        const currentUser = auth.getUserInfo();
+        if (currentUser) {
+          currentUser.followingCount = (currentUser.followingCount || 0) + 1;
+          auth.updateUserInfo(currentUser);
+        }
+      }
+      ElMessage.success('关注成功');
+    }
+  } catch (error) {
+    console.error('关注操作失败:', error);
+    ElMessage.error('操作失败，请稍后重试');
+  }
+};
+
+// 在 script setup 部分添加导航函数
+const navigateToUserProfile = (userId) => {
+  router.push(`/profile/${userId}`);
+  showFollowingList.value = false;
+  showFollowersList.value = false;
+};
 </script>
 
 <style scoped>
 @import '../styles/profile.css';
 
+.profile-stats {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #555;
+  font-size: 1.2rem;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 1.2rem;
+}
+
+.profile-nickname-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.follow-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #1890ff;
+  color: white;
+  margin-left: 10px;
+}
+
+.follow-btn.following {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.follow-btn:hover {
+  opacity: 0.8;
+}
+
+.follow-btn.following:hover {
+  background-color: #e0e0e0;
+}
+
+.user-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.user-nickname {
+  font-size: 14px;
+  color: #333;
+}
+
+.empty-list {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+}
+
+.list-follow-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #1890ff;
+  color: white;
+}
+
+.list-follow-btn.following {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.list-follow-btn:hover {
+  opacity: 0.8;
+}
+
+.list-follow-btn.following:hover {
+  background-color: #e0e0e0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex: 1;
+}
+
+.user-info:hover {
+  opacity: 0.8;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  gap: 10px;
+}
 </style>

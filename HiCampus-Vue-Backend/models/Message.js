@@ -13,13 +13,15 @@ const messageSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['like', 'comment', 'collect', 'mention'],
+        enum: ['like', 'comment', 'collect', 'mention', 'follow'],
         required: true
     },
     article: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Article',
-        required: true
+        required: function() {
+            return this.type !== 'follow';
+        }
     },
     content: {
         type: String,

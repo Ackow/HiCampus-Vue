@@ -43,7 +43,7 @@
             <p v-if="notification.content" class="comment-content">{{ notification.content }}</p>
             <span class="time-ago">{{ notification.time }}</span>
           </div>
-          <div class="notification-right">
+          <div class="notification-right" v-if="notification.postImage">
             <img :src="getImageUrl(notification.postImage)" alt="文章缩略图" class="post-thumbnail">
           </div>
         </div>

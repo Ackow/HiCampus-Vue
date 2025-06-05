@@ -97,7 +97,9 @@ export function useAuth() {
           ...result.user,
           avatar: result.user.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
         };
-        setUserInfo(userData)
+        // 存储用户ID到本地存储
+        localStorage.setItem('uid', result.user.id);
+        // 存储用户信息到本地存储
         localStorage.setItem('isLoggedIn', 'true')
         
         // 更新UI显示
@@ -201,9 +203,14 @@ export function useAuth() {
 
   // 获取用户信息
   const getUserInfo = () => {
+    // 优先从本地存储获取用户信息
+    const storedUserInfo = localStorage.getItem('userInfo');
+    if (storedUserInfo) {
+      return JSON.parse(storedUserInfo);
+    }
+    // 如果没有本地存储，则从user.value获取
     const userData = user.value;
     if (userData) {
-      // 确保返回的用户数据包含 _id 字段
       return {
         ...userData,
         _id: userData.id
@@ -212,23 +219,13 @@ export function useAuth() {
     return null;
   }
 
-  // 设置用户信息
-  const setUserInfo = (info) => {
-    // 确保存储的用户数据包含 _id 字段
-    const userData = {
-      ...info,
-      _id: info.id
-    };
-    user.value = userData;
-    // localStorage.setItem('userInfo', JSON.stringify(userData));
-  }
-
   // 清除认证信息
   const clearAuth = () => {
     token.value = null;
     user.value = null;
     localStorage.removeItem('token');
-    // localStorage.removeItem('userInfo');
+    localStorage.removeItem('uid');
+    localStorage.removeItem('userInfo');
   }
 
   // 检查是否已登录
@@ -241,7 +238,8 @@ export function useAuth() {
     // 清除所有本地存储
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('token');
-    // localStorage.removeItem('userInfo');
+    localStorage.removeItem('uid');
+    localStorage.removeItem('userInfo');
     
     // 更新UI状态
     updateUI(false);
@@ -281,7 +279,6 @@ export function useAuth() {
     user,
     getToken,
     setToken,
-    setUserInfo,
     clearAuth,
     isAuthenticated
   }

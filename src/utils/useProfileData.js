@@ -39,6 +39,13 @@ export function useProfileData() {
             _id: data.user.id
           };
           userInfo.value = userData;
+
+          // 如果不是查看自己的主页，检查关注状态
+          if (userId && userId !== auth.user?._id) {
+            const followStatus = await checkFollowStatus(userId);
+            userInfo.value.isFollowing = followStatus.isFollowing;
+          }
+
           return userData;
         }
       } else {
@@ -51,6 +58,75 @@ export function useProfileData() {
       console.error('获取用户信息失败:', error);
       error.value = '获取用户信息失败';
       return null;
+    }
+  };
+
+  // 检查关注状态
+  const checkFollowStatus = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/user/${userId}/follow-status`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      return { isFollowing: false };
+    } catch (error) {
+      console.error('检查关注状态失败:', error);
+      return { isFollowing: false };
+    }
+  };
+
+  // 关注用户
+  const followUser = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/user/${userId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (userInfo.value) {
+          userInfo.value.isFollowing = true;
+          userInfo.value.followerCount = data.followerCount;
+        }
+        return data;
+      }
+      throw new Error('关注失败');
+    } catch (error) {
+      console.error('关注用户失败:', error);
+      throw error;
+    }
+  };
+
+  // 取消关注
+  const unfollowUser = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/user/${userId}/follow`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (userInfo.value) {
+          userInfo.value.isFollowing = false;
+          userInfo.value.followerCount = data.followerCount;
+        }
+        return data;
+      }
+      throw new Error('取消关注失败');
+    } catch (error) {
+      console.error('取消关注失败:', error);
+      throw error;
     }
   };
 
@@ -395,6 +471,9 @@ export function useProfileData() {
     fetchUserNotes,
     fetchUserLikes,
     handleLikeUpdate,
-    handleCollectUpdate
+    handleCollectUpdate,
+    followUser,
+    unfollowUser,
+    checkFollowStatus
   };
 }
