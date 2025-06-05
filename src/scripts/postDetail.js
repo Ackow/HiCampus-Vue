@@ -1,10 +1,11 @@
 import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 // 配置 axios 默认值
-axios.defaults.baseURL = 'http://localhost:3000'
+const baseUrl = 'http://localhost:3000'
 
-export function usePostDetail(props, emit) {
+export function usePostDetail(props, emit, onDeleteSuccess) {
   // 响应式状态
   const currentImageIndex = ref(0)
   const commentContent = ref('')
@@ -22,9 +23,11 @@ export function usePostDetail(props, emit) {
   const collectCount = ref(0)
   const previewImageIndex = ref(0)
   const showImagePreview = ref(false)
+  const mentionedUsers = ref([])
+  const adminMentions = ref([])
 
   // 新增：返回艾特信息
-  const mentionedUsers = computed(() => {
+  const mentionedUsersComputed = computed(() => {
     if (!props.postDetail) {
       console.log('postDetail 为空')
       return []
@@ -33,7 +36,7 @@ export function usePostDetail(props, emit) {
     return Array.isArray(users) ? users : []
   })
 
-  const adminMentions = computed(() => {
+  const adminMentionsComputed = computed(() => {
     if (!props.postDetail) {
       console.log('postDetail 为空')
       return []
@@ -62,7 +65,7 @@ export function usePostDetail(props, emit) {
     }
     try {
       console.log('开始加载评论，文章ID:', props.postDetail.id)
-      const response = await axios.get(`/api/articles/${props.postDetail.id}/comments`)
+      const response = await axios.get(`${baseUrl}/api/articles/${props.postDetail.id}/comments`)
       console.log('评论加载响应:', response.data)
       comments.value = response.data
       console.log('评论列表已更新:', comments.value)
@@ -121,7 +124,7 @@ export function usePostDetail(props, emit) {
     }
 
     try {
-      const response = await axios.get(`/api/articles/${props.postDetail.id}/like-status`, {
+      const response = await axios.get(`${baseUrl}/api/articles/${props.postDetail.id}/like-status`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -141,10 +144,7 @@ export function usePostDetail(props, emit) {
     }
 
     try {
-      const method = isLiked.value ? 'delete' : 'post'
-      const response = await axios({
-        method: method,
-        url: `/api/articles/${props.postDetail.id}/like`,
+      const response = await axios.post(`${baseUrl}/api/articles/${props.postDetail.id}/like`, null, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -178,7 +178,7 @@ export function usePostDetail(props, emit) {
     }
 
     try {
-      const response = await axios.get(`/api/articles/${props.postDetail.id}/collect-status`, {
+      const response = await axios.get(`${baseUrl}/api/articles/${props.postDetail.id}/collect-status`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -198,10 +198,7 @@ export function usePostDetail(props, emit) {
     }
 
     try {
-      const method = isCollected.value ? 'delete' : 'post'
-      const response = await axios({
-        method: method,
-        url: `/api/articles/${props.postDetail.id}/collect`,
+      const response = await axios.post(`${baseUrl}/api/articles/${props.postDetail.id}/collect`, null, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -237,7 +234,7 @@ export function usePostDetail(props, emit) {
     
     isLoading.value = true
     try {
-      const response = await axios.post(`/api/articles/${props.postDetail.id}/comments`, {
+      const response = await axios.post(`${baseUrl}/api/articles/${props.postDetail.id}/comments`, {
         content: commentContent.value
       }, {
         headers: {
@@ -250,7 +247,7 @@ export function usePostDetail(props, emit) {
       commentContent.value = ''
       emit('comment-added', response.data)
     } catch (error) {
-      console.error('发送评论失败:', error)
+      console.error('提交评论失败:', error)
       if (error.response?.status === 401) {
         alert('请先登录后再评论')
       } else {
@@ -263,26 +260,39 @@ export function usePostDetail(props, emit) {
 
   // 删除相关
   const handleDelete = async () => {
-    if (isDeleting.value) return
-    
     try {
-      isDeleting.value = true
-      await axios.delete(`/api/articles/${props.postDetail.id}`, {
+      isDeleting.value = true;
+      const token = localStorage.getItem('token');
+      
+      // 删除文章相关的消息
+      await axios.delete(`${baseUrl}/api/messages/article/${props.postDetail.id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${token}`
         }
-      })
+      });
 
-      showDeleteConfirm.value = false
-      closeDetail()
-      window.location.reload()
+      // 删除文章
+      await axios.delete(`${baseUrl}/api/articles/${props.postDetail.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      ElMessage.success('文章删除成功');
+      closeDetail();
+      // 触发文章删除事件
+      emit('article-deleted', props.postDetail.id);
+      // 调用删除成功的回调
+      if (onDeleteSuccess) {
+        onDeleteSuccess();
+      }
     } catch (error) {
-      console.error('删除文章失败:', error)
-      alert('删除失败，请重试')
+      console.error('删除文章失败:', error);
+      ElMessage.error('删除文章失败');
     } finally {
-      isDeleting.value = false
+      isDeleting.value = false;
     }
-  }
+  };
 
   // 判断是否是评论作者
   const isCommentAuthor = (comment) => {
@@ -299,31 +309,25 @@ export function usePostDetail(props, emit) {
     showDeleteCommentConfirm.value = true
   }
 
-  const handleDeleteComment = async () => {
-    if (isDeleting.value || !commentToDelete.value) return
-    
+  const handleDeleteComment = async (comment) => {
     try {
-      isDeleting.value = true
-      await axios.delete(`/api/articles/${props.postDetail.id}/comments/${commentToDelete.value._id}`, {
+      isDeleting.value = true;
+      await axios.delete(`${baseUrl}/api/articles/${props.postDetail.id}/comments/${comment._id}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         }
-      })
+      });
 
-      const index = comments.value.findIndex(c => c._id === commentToDelete.value._id)
-      if (index !== -1) {
-        comments.value.splice(index, 1)
-      }
-
-      showDeleteCommentConfirm.value = null
-      commentToDelete.value = null
+      // 从评论列表中移除被删除的评论
+      comments.value = comments.value.filter(c => c._id !== comment._id);
+      ElMessage.success('评论删除成功');
     } catch (error) {
-      console.error('删除评论失败:', error)
-      alert('删除失败，请重试')
+      console.error('删除评论失败:', error);
+      ElMessage.error('删除评论失败');
     } finally {
-      isDeleting.value = false
+      isDeleting.value = false;
     }
-  }
+  };
 
   // 初始化数据
   const initLikeAndCollectData = () => {

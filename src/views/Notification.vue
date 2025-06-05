@@ -3,14 +3,24 @@
     <div class="messages-main">
       <div class="message-header">
         <div class="message-title">我的消息</div>
-        <button 
-          v-if="hasUnreadMessages" 
-          class="mark-all-read-btn" 
-          @click="handleMarkAllAsRead"
-          :disabled="markingAllAsRead"
-        >
-          {{ markingAllAsRead ? '标记中...' : '全部已读' }}
-        </button>
+        <div class="message-actions">
+          <button 
+            v-if="hasUnreadMessages" 
+            class="mark-all-read-btn" 
+            @click="handleMarkAllAsRead"
+            :disabled="markingAllAsRead"
+          >
+            {{ markingAllAsRead ? '标记中...' : '全部已读' }}
+          </button>
+          <button 
+            v-if="notifications.length > 0"
+            class="delete-all-btn" 
+            @click="handleDeleteAll"
+            :disabled="deletingAll"
+          >
+            {{ deletingAll ? '删除中...' : '删除所有' }}
+          </button>
+        </div>
       </div>
 
       <div class="notifications-list">
@@ -66,6 +76,8 @@ import axios from 'axios';
 import { ref, onMounted, computed } from 'vue';
 import { eventBus } from '../utils/eventBus.js';
 import PostDetail from './PostDetail.vue';
+import { ElMessageBox, ElMessage } from 'element-plus';
+import 'element-plus/dist/index.css';
 
 export default {
   name: 'Notification',
@@ -78,6 +90,7 @@ export default {
     const hasMore = ref(true);
     const loading = ref(false);
     const markingAllAsRead = ref(false);
+    const deletingAll = ref(false);
     const baseUrl = 'http://localhost:3000';
     const selectedPost = ref(null);
 
@@ -292,6 +305,57 @@ export default {
       }
     };
 
+    // 删除所有消息
+    const deleteAllMessages = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`${baseUrl}/api/messages/all`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        // 清空消息列表
+        notifications.value = [];
+        // 触发未读消息数量更新事件
+        eventBus.emit('updateUnreadCount', 0);
+        return true;
+      } catch (error) {
+        console.error('删除所有消息失败:', error);
+        return false;
+      }
+    };
+
+    // 处理删除所有消息
+    const handleDeleteAll = async () => {
+      try {
+        deletingAll.value = true;
+        const confirmed = await ElMessageBox.confirm(
+          '确定要删除所有消息吗？此操作不可恢复',
+          '提示',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        );
+        
+        if (confirmed) {
+          const success = await deleteAllMessages();
+          if (success) {
+            ElMessage.success('所有消息已删除');
+          } else {
+            ElMessage.error('删除失败，请重试');
+          }
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          ElMessage.error('操作失败，请重试');
+        }
+      } finally {
+        deletingAll.value = false;
+      }
+    };
+
     onMounted(() => {
       fetchMessages();
     });
@@ -301,6 +365,7 @@ export default {
       hasMore,
       loading,
       markingAllAsRead,
+      deletingAll,
       hasUnreadMessages,
       loadMore,
       getAvatarUrl,
@@ -308,6 +373,7 @@ export default {
       markAsRead,
       markAllAsRead,
       handleMarkAllAsRead,
+      handleDeleteAll,
       getUnreadCount,
       selectedPost,
       handleNotificationClick,
@@ -324,5 +390,28 @@ export default {
 <style scoped>
 @import '../styles/notification.css';
 
+.message-actions {
+  display: flex;
+  gap: 10px;
+}
 
+.delete-all-btn {
+  background-color: #f56c6c;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.delete-all-btn:hover {
+  background-color: #e64242;
+}
+
+.delete-all-btn:disabled {
+  background-color: #fab6b6;
+  cursor: not-allowed;
+}
 </style> 

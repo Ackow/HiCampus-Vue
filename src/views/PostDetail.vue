@@ -9,7 +9,7 @@
                 <img :src="getUserDisplayInfo(postDetail).avatar" alt="User Avatar" class="detail-avatar">
                 <span class="detail-username">{{ getUserDisplayInfo(postDetail).nickname }}</span>
               </div>
-              <button class="more-options-btn" @click="showDeleteConfirm = true" v-if="isAuthor || isAdmin">
+              <button class="more-options-btn" @click="confirmDelete" v-if="isAuthor || isAdmin">
                 <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
               </button>
             </div>
@@ -109,7 +109,7 @@
                       <button 
                         v-if="isCommentAuthor(comment) || isAdmin" 
                         class="delete-comment-btn"
-                        @click="showDeleteCommentConfirmDialog(comment)"
+                        @click="confirmDeleteComment(comment)"
                       >
                         <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
                       </button>
@@ -168,40 +168,6 @@
       :initial-index="previewImageIndex"
       @close="closeImagePreview"
     />
-
-    <Teleport to="body">
-      <Transition name="fade">
-        <div class="delete-confirm-overlay" v-if="showDeleteConfirm" @click.self="showDeleteConfirm = false">
-          <div class="delete-confirm-modal">
-            <h3>确认删除</h3>
-            <p>删除后将无法恢复，是否确认删除该文章？</p>
-            <div class="delete-confirm-buttons">
-              <button class="cancel-btn" @click="showDeleteConfirm = false">取消</button>
-              <button class="delete-btn" @click="handleDelete" :disabled="isDeleting">
-                {{ isDeleting ? '删除中...' : '确认删除' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <Teleport to="body">
-      <Transition name="fade">
-        <div class="delete-confirm-overlay" v-if="showDeleteCommentConfirm" @click.self="showDeleteCommentConfirm = null">
-          <div class="delete-confirm-modal">
-            <h3>确认删除</h3>
-            <p>删除后将无法恢复，是否确认删除该评论？</p>
-            <div class="delete-confirm-buttons">
-              <button class="cancel-btn" @click="showDeleteCommentConfirm = null">取消</button>
-              <button class="delete-btn" @click="handleDeleteComment" :disabled="isDeleting">
-                {{ isDeleting ? '删除中...' : '确认删除' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
@@ -209,8 +175,12 @@
 import { usePostDetail } from '../scripts/postDetail'
 import ImagePreview from '../components/ImagePreview.vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter();
+const baseUrl = 'http://localhost:3000';
+
 const props = defineProps({
   show: {
     type: Boolean,
@@ -227,7 +197,8 @@ const emit = defineEmits([
   'toggle-like',
   'comment-added',
   'update-like-count',
-  'updateCollectCount'
+  'updateCollectCount',
+  'article-deleted'
 ])
 
 // 添加随机昵称生成函数
@@ -354,6 +325,44 @@ const handleUserInfoClick = async (event, isComment = false, comment = null, use
   } catch (error) {
     console.error('路由跳转失败:', error);
   }
+};
+
+// 确认删除文章
+const confirmDelete = () => {
+  ElMessageBox.confirm(
+    '删除后将无法恢复，是否确认删除该文章？',
+    '确认删除',
+    {
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      handleDelete();
+    })
+    .catch(() => {
+      // 用户取消删除
+    });
+};
+
+// 确认删除评论
+const confirmDeleteComment = (comment) => {
+  ElMessageBox.confirm(
+    '删除后将无法恢复，是否确认删除该评论？',
+    '确认删除',
+    {
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      handleDeleteComment(comment);
+    })
+    .catch(() => {
+      // 用户取消删除
+    });
 };
 </script>
 

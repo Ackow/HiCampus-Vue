@@ -163,9 +163,35 @@ const formatTime = (date) => {
     }
 };
 
+// 删除所有消息
+const deleteAllMessages = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    await Message.deleteMany({ receiver: userId });
+    res.json({ message: '所有消息已删除' });
+  } catch (error) {
+    console.error('删除所有消息失败:', error);
+    res.status(500).json({ message: '删除所有消息失败' });
+  }
+};
+
+// 删除文章相关的所有消息
+const deleteArticleMessages = async (req, res) => {
+  try {
+    const { articleId } = req.params;
+    await Message.deleteMany({ article: articleId });
+    res.json({ message: '文章相关消息已删除' });
+  } catch (error) {
+    console.error('删除文章相关消息失败:', error);
+    res.status(500).json({ message: '删除文章相关消息失败' });
+  }
+};
+
 module.exports = {
     getMessages,
     markAsRead,
     markAllAsRead,
-    getUnreadCount
+    getUnreadCount,
+    deleteAllMessages,
+    deleteArticleMessages
 }; 

@@ -15,4 +15,10 @@ router.put('/messages/read-all', authenticateToken, messageController.markAllAsR
 // 获取未读消息数量
 router.get('/messages/unread-count', authenticateToken, messageController.getUnreadCount);
 
+// 删除所有消息
+router.delete('/messages/all', authenticateToken, messageController.deleteAllMessages);
+
+// 删除文章相关的所有消息
+router.delete('/messages/article/:articleId', authenticateToken, messageController.deleteArticleMessages);
+
 module.exports = router; 

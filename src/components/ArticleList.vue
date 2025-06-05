@@ -54,6 +54,7 @@
       @close="closePostDetail"
       @toggle-like="toggleLike"
       @update-like-count="updateLikeCount"
+      @article-deleted="handleArticleDeleted"
     />
   </div>
 </template>
@@ -114,7 +115,8 @@ const {
   handleImageError,
   handleAvatarError,
   checkArticlesLikeStatus,
-  searchArticles
+  searchArticles,
+  deleteArticle
 } = useArticleList();
 
 // 获取文章图片
@@ -225,6 +227,12 @@ watch(() => articles.value, async (newArticles) => {
     await checkArticlesLikeStatus();
   }
 }, { immediate: true });
+
+// 处理文章删除
+const handleArticleDeleted = (articleId) => {
+  deleteArticle(articleId);
+  closePostDetail();
+};
 
 onMounted(() => {
   console.log('ArticleList mounted, articles:', articles.value);

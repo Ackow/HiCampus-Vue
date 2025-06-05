@@ -201,6 +201,11 @@ export function useArticleList() {
     }
   };
 
+  // 删除文章
+  const deleteArticle = (articleId) => {
+    articles.value = articles.value.filter(article => article._id !== articleId);
+  };
+
   onMounted(() => {
     window.addEventListener('scroll', handleScroll);
     loadArticles();
@@ -220,6 +225,7 @@ export function useArticleList() {
     handleAvatarError,
     checkArticlesLikeStatus,
     searchArticles,
-    fetchArticles
+    fetchArticles,
+    deleteArticle
   };
 } 
