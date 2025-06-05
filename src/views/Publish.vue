@@ -9,13 +9,32 @@
           <input 
             type="file" 
             ref="imageInput" 
-            accept="image/*" 
+            accept="image/*,video/*" 
             multiple 
             style="display: none;"
-            @change="onImageSelect"
+            @change="onMediaSelect"
           >
         </div>
         <div class="image-preview-container">
+          <!-- 视频预览 -->
+          <div v-if="video" class="uploaded-video-placeholder">
+            <video 
+              :src="video.preview" 
+              class="uploaded-video" 
+              preload="metadata"
+            ></video>
+            <div class="video-overlay">
+              <img src="/assets/images/播放.svg" alt="播放" class="play-icon">
+              <span class="video-duration">{{ formatDuration(videoDuration) }}</span>
+            </div>
+            <img 
+              src="/assets/images/删除.svg" 
+              class="delete-btn" 
+              alt="删除"
+              @click.stop="removeVideo"
+            >
+          </div>
+          <!-- 图片预览 -->
           <div 
             v-for="(image, index) in images" 
             :key="index" 
@@ -244,17 +263,6 @@
         </div>
       </div>
 
-      <!-- <div class="settings-row">
-        <div class="setting-item">
-          <img src="/assets/images/锁定.svg" alt="可见范围" class="setting-icon">
-          <span>可见范围</span>
-        </div>
-        <div class="setting-item">
-          <img src="/assets/images/齿轮.svg" alt="高级设置" class="setting-icon">
-          <span>高级设置</span>
-        </div>
-      </div> -->
-
       <div class="publish-button-container">
         <button 
           class="publish-btn" 
@@ -271,8 +279,8 @@
 <script setup>
 import { usePublish } from '../scripts/publish'
 import { ref, computed } from 'vue'
-import { useAuth } from '../utils/useAuth.js'
 import { useRouter } from 'vue-router'
+import { collegeOptions } from '../data/colleges'
 
 const imageInput = ref(null)
 const showLocationSearch = ref(false)
@@ -381,6 +389,9 @@ const {
   title,
   content,
   images,
+  video,
+  videoThumbnail,
+  videoDuration,
   mentions,
   topics,
   searchResults,
@@ -394,7 +405,9 @@ const {
   userSearchRef,
   triggerImageInput,
   handleImageSelect,
+  handleVideoSelect,
   removeImage,
+  removeVideo,
   addMention,
   removeMention,
   addTopic,
@@ -409,15 +422,9 @@ const {
   handleLocationSelect,
   removeLocation,
   locationResults,
-  selectedLocation
+  selectedLocation,
+  isAdmin
 } = usePublish()
-
-// 管理员相关状态
-const auth = useAuth()
-const isAdmin = computed(() => {
-  const user = auth.getUserInfo()
-  return user && ['moderator', 'admin', 'superadmin'].includes(user.role)
-})
 
 const showAdminMentionSearch = ref(false)
 const adminMentionSearchRef = ref(null)
@@ -426,14 +433,8 @@ const collegeQuery = ref('')
 const collegeResults = ref([])
 const adminMentions = ref([])
 
-// 固定的学院列表
-const collegeList = [
-  '计算机工程学院',
-  '商学院',
-  '电气工程学院',
-  '通信工程学院',
-  '电子工程学院'
-]
+// 使用统一的学院列表
+const collegeList = collegeOptions
 
 // 处理管理员艾特类型选择
 const handleAdminMentionType = (type) => {
@@ -504,10 +505,84 @@ const handlePublish = async () => {
   }
 }
 
-// 处理图片选择
-const onImageSelect = (event) => {
-  console.log('图片选择事件触发')
-  handleImageSelect(event)
+// 格式化视频时长
+const formatDuration = (seconds) => {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+// 处理媒体选择（图片或视频）
+const onMediaSelect = (event) => {
+  const files = event.target.files
+  if (!files) return
+
+  Array.from(files).forEach(file => {
+    if (file.type.startsWith('video/')) {
+      // 处理视频文件
+      if (video.value) {
+        alert('只能上传一个视频')
+        return
+      }
+
+      // 验证文件大小（20MB限制）
+      if (file.size > 20 * 1024 * 1024) {
+        alert('视频大小不能超过20MB')
+        return
+      }
+
+      // 创建视频预览
+      const videoUrl = URL.createObjectURL(file)
+      const videoElement = document.createElement('video')
+      videoElement.src = videoUrl
+
+      videoElement.onloadedmetadata = () => {
+        videoDuration.value = videoElement.duration
+      }
+
+      // 生成视频缩略图
+      videoElement.onseeked = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = videoElement.videoWidth
+        canvas.height = videoElement.videoHeight
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+        videoThumbnail.value = canvas.toDataURL('image/jpeg')
+      }
+
+      videoElement.currentTime = 1 // 设置到1秒处生成缩略图
+
+      video.value = {
+        file: file,
+        preview: videoUrl
+      }
+    } else if (file.type.startsWith('image/')) {
+      // 处理图片文件
+      if (images.value.length >= 9) {
+        alert('最多只能上传9张图片')
+        return
+      }
+
+      // 验证文件大小（5MB限制）
+      if (file.size > 5 * 1024 * 1024) {
+        alert('图片大小不能超过5MB')
+        return
+      }
+
+      // 创建预览
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        images.value.push({
+          file: file,
+          preview: e.target.result
+        })
+      }
+      reader.readAsDataURL(file)
+    }
+  })
+
+  // 清空input，允许重复选择同一文件
+  event.target.value = ''
 }
 
 // 处理点击添加按钮
@@ -559,251 +634,5 @@ const router = useRouter()
 <style scoped>
 @import '../styles/publish.css';
 
-.content-area {
-  position: relative;
-  width: 100%;
-}
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: transparent;
-  z-index: 999;
-  cursor: default;
-}
-
-.search-modal {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-  margin-top: 8px;
-}
-
-.search-popup {
-  position: relative;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1001;
-}
-
-.admin-mention-options {
-  display: flex;
-  gap: 10px;
-}
-
-.admin-mention-btn {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.admin-mention-btn.active {
-  background: #4a90e2;
-  color: white;
-  border-color: #4a90e2;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #666;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-
-.college-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.college-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-left: 10px;
-}
-
-.college-item:hover {
-  background-color: #f5f5f5;
-}
-
-.college-name {
-  font-size: 14px;
-  color: #333;
-}
-
-.add-college-btn {
-  padding: 4px 12px;
-  border: 1px solid #4a90e2;
-  border-radius: 4px;
-  background: white;
-  color: #4a90e2;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
-}
-
-.add-college-btn:hover {
-  background: #4a90e2;
-  color: white;
-}
-
-.all-users-notice {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-  background: #f5f5f5;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-/* 统一其他弹窗样式 */
-.search-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  margin-bottom: 12px;
-}
-
-.search-item {
-  padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.search-item:hover {
-  background-color: #f5f5f5;
-}
-
-.no-results {
-  padding: 20px;
-  text-align: center;
-  color: #999;
-  font-size: 14px;
-}
-
-.selected-items {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  margin-top: 8px;
-  padding: 12px;
-  z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.item-tag {
-  display: inline-flex;
-  align-items: center;
-  background: #f5f5f5;
-  padding: 6px 12px;
-  border-radius: 16px;
-  margin: 4px;
-  font-size: 13px;
-  color: #333;
-  border: 1px solid #e8e8e8;
-}
-
-.remove-item {
-  background: none;
-  border: none;
-  color: #999;
-  margin-left: 6px;
-  cursor: pointer;
-  padding: 0 2px;
-  font-size: 14px;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.remove-item:hover {
-  color: #ff4d4f;
-}
-
-.selected-items-container {
-  margin-top: 16px;
-  padding: 5px;
-  background: #f8f9fa;
-  border-radius: 20px;
-  border: 1px solid #e9ecef;
-}
-
-.item-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 16px;
-  margin: 4px;
-  font-size: 13px;
-  color: #333;
-  border: 1px solid #e8e8e8;
-  background: white;
-}
-
-.item-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 6px;
-}
-
-.topic-tag {
-  background: #e6f7ff;
-  border-color: #91d5ff;
-}
-
-.mention-tag {
-  background: #f6ffed;
-  border-color: #b7eb8f;
-}
-
-.admin-tag {
-  background: #fff7e6;
-  border-color: #ffd591;
-}
-
-.location-tag {
-  background: #f9f0ff;
-  border-color: #d3adf7;
-}
-
-.remove-item {
-  background: none;
-  border: none;
-  color: #999;
-  margin-left: 6px;
-  cursor: pointer;
-  padding: 0 2px;
-  font-size: 14px;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.remove-item:hover {
-  color: #ff4d4f;
-}
 </style> 

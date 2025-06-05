@@ -121,6 +121,17 @@ const {
 
 // 获取文章图片
 const getArticleImage = (article) => {
+  // 优先使用视频预览图
+  if (article.video && article.video.thumbnail) {
+    return article.video.thumbnail;
+  }
+  
+  // 其次使用视频第一帧作为预览图
+  if (article.video && article.video.url) {
+    return article.video.url;
+  }
+
+  // 最后使用图片
   if (article.images && article.images.length > 0) {
     const imagePath = article.images[0];
     // 如果已经是完整URL，直接返回
@@ -179,7 +190,8 @@ const openPostDetail = (article) => {
     creatorId: article.creator._id,
     location: article.location || null,
     adminMentions: article.adminMentions || [],
-    mentionedUsers: article.mentionedUsers || []
+    mentionedUsers: article.mentionedUsers || [],
+    video: article.video || null
   };
   showPostDetail.value = true;
 };

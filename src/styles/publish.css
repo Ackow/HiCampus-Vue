@@ -51,10 +51,11 @@
   flex-wrap: wrap;
 }
 
+.uploaded-video-placeholder,
 .uploaded-image-placeholder {
   position: relative;
-  width: 7.5rem;
-  height: 7.5rem;
+  width: 100px;
+  height: 100px;
   border-radius: 0.5rem;
   overflow: hidden;
   border: 1px solid #D9D9D9;
@@ -745,4 +746,454 @@
 .remove-tag:hover {
   color: #f44336;
   background-color: rgba(244, 67, 54, 0.1);
+}
+
+.content-area {
+  position: relative;
+  width: 100%;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  z-index: 999;
+  cursor: default;
+}
+
+.search-modal {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  margin-top: 8px;
+}
+
+.search-popup {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+}
+
+.admin-mention-options {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-mention-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.admin-mention-btn.active {
+  background: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.college-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.college-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 10px;
+}
+
+.college-item:hover {
+  background-color: #f5f5f5;
+}
+
+.college-name {
+  font-size: 14px;
+  color: #333;
+}
+
+.add-college-btn {
+  padding: 4px 12px;
+  border: 1px solid #4a90e2;
+  border-radius: 4px;
+  background: white;
+  color: #4a90e2;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.add-college-btn:hover {
+  background: #4a90e2;
+  color: white;
+}
+
+.all-users-notice {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* 统一其他弹窗样式 */
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.search-item {
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-item:hover {
+  background-color: #f5f5f5;
+}
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.selected-items {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.item-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 6px 12px;
+  border-radius: 16px;
+  margin: 4px;
+  font-size: 13px;
+  color: #333;
+  border: 1px solid #e8e8e8;
+}
+
+.remove-item {
+  background: none;
+  border: none;
+  color: #999;
+  margin-left: 6px;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.remove-item:hover {
+  color: #ff4d4f;
+}
+
+.selected-items-container {
+  margin-top: 16px;
+  padding: 5px;
+  background: #f8f9fa;
+  border-radius: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.item-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 16px;
+  margin: 4px;
+  font-size: 13px;
+  color: #333;
+  border: 1px solid #e8e8e8;
+  background: white;
+}
+
+.item-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+
+.topic-tag {
+  background: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+.mention-tag {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.admin-tag {
+  background: #fff7e6;
+  border-color: #ffd591;
+}
+
+.location-tag {
+  background: #f9f0ff;
+  border-color: #d3adf7;
+}
+
+.remove-item {
+  background: none;
+  border: none;
+  color: #999;
+  margin-left: 6px;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.remove-item:hover {
+  color: #ff4d4f;
+}
+
+.uploaded-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.play-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 4px;
+}
+
+.video-duration {
+  color: white;
+  font-size: 12px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.uploaded-image,
+.uploaded-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+.upload-box {
+  width: 100px;
+  height: 100px;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.upload-box:hover {
+  border-color: #409eff;
+  background: #f0f7ff;
+}
+
+.upload-box i {
+  font-size: 24px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.upload-box span {
+  font-size: 12px;
+  color: #909399;
+}
+
+.upload-box input[type="file"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.image-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview .delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.image-preview:hover .delete-btn {
+  opacity: 1;
+}
+
+.image-preview .delete-btn i {
+  color: #fff;
+  font-size: 12px;
+}
+
+.video-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.video-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-preview .video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.video-preview .video-overlay i {
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.video-preview .video-overlay span {
+  color: #fff;
+  font-size: 12px;
+}
+
+.video-preview .delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 1;
+}
+
+.video-preview:hover .delete-btn {
+  opacity: 1;
+}
+
+.video-preview .delete-btn i {
+  color: #fff;
+  font-size: 12px;
+}
+
+.media-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-top: 10px;
 }

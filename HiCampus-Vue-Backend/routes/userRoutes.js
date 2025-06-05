@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 const uploadController = require('../controllers/uploadController');
 const articleController = require('../controllers/articleController');
 const authenticateToken = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { upload, uploadVideo } = require('../middleware/upload');
 
 // 注册路由
 router.post('/register', userController.register);
@@ -29,5 +29,8 @@ router.put('/update', authenticateToken, userController.updateUserInfo);
 
 // 图片上传路由
 router.post('/upload/image', authenticateToken, upload.single('image'), uploadController.uploadImage);
+
+// 视频上传路由
+router.post('/upload/video', authenticateToken, uploadVideo.single('video'), uploadController.uploadVideo);
 
 module.exports = router; 

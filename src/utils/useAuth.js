@@ -27,7 +27,7 @@ export function useAuth() {
   let updateUICallback = null;
 
   const token = ref(localStorage.getItem('token'))
-  const user = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
+  const user = ref('')
 
   // 设置回调函数
   const setUpdateUICallback = (callback) => {
@@ -220,7 +220,7 @@ export function useAuth() {
       _id: info.id
     };
     user.value = userData;
-    localStorage.setItem('userInfo', JSON.stringify(userData));
+    // localStorage.setItem('userInfo', JSON.stringify(userData));
   }
 
   // 清除认证信息
@@ -228,7 +228,7 @@ export function useAuth() {
     token.value = null;
     user.value = null;
     localStorage.removeItem('token');
-    localStorage.removeItem('userInfo');
+    // localStorage.removeItem('userInfo');
   }
 
   // 检查是否已登录
@@ -241,7 +241,7 @@ export function useAuth() {
     // 清除所有本地存储
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('token');
-    localStorage.removeItem('userInfo');
+    // localStorage.removeItem('userInfo');
     
     // 更新UI状态
     updateUI(false);

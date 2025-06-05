@@ -1,10 +1,14 @@
+const express = require('express');
+const router = express.Router();
 const Article = require('../models/Article');
 const Image = require('../models/Image');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
 const Message = require('../models/Message');
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+const authenticateToken = require('../middleware/auth');
 
 // 获取文章列表
 const getArticles = async (req, res) => {
@@ -163,7 +167,7 @@ const getMentionedArticles = async (req, res) => {
 // 创建文章
 const createArticle = async (req, res) => {
     try {
-        const { title, content, images, mentions, topics, location, adminMentions } = req.body;
+        const { title, content, images, mentions, topics, location, adminMentions, video } = req.body;
         
         // 验证必要字段
         if (!title || !content) {
@@ -190,7 +194,8 @@ const createArticle = async (req, res) => {
             mentionsCount: mentions ? mentions.length : 0,
             topicsCount: topics ? topics.length : 0,
             location: location || null,
-            adminMentions: adminMentions || []
+            adminMentions: adminMentions || [],
+            hasVideo: !!video
         });
 
         // 创建文章
@@ -203,7 +208,12 @@ const createArticle = async (req, res) => {
             mentionedUsers: mentions || [],
             topics: topics || [],
             location: location || null,
-            adminMentions: adminMentions || []
+            adminMentions: adminMentions || [],
+            video: video ? {
+                url: video.url,
+                thumbnail: video.thumbnail,
+                duration: video.duration
+            } : null
         });
 
         // 保存文章
@@ -867,39 +877,23 @@ const deleteArticle = async (req, res) => {
         for (const image of images) {
             try {
                 const imageUrl = image.imageUrl.split('/').pop();
-                // 尝试删除带后缀的文件
-                const imagePathWithExt = path.resolve(__dirname, '..', 'uploads', 'images', `${imageUrl}.png`);
-                // 尝试删除不带后缀的文件
-                const imagePathWithoutExt = path.resolve(__dirname, '..', 'uploads', 'images', imageUrl);
-                
-                // 删除带后缀的文件
-                try {
-                    await fs.access(imagePathWithExt);
-                    await fs.unlink(imagePathWithExt);
-                    console.log('删除图片文件成功(带后缀):', imagePathWithExt);
-                } catch (error) {
-                    if (error.code === 'ENOENT') {
-                        console.log('图片文件不存在(带后缀):', imagePathWithExt);
-                    } else {
-                        throw error;
-                    }
-                }
-
-                // 删除不带后缀的文件
-                try {
-                    await fs.access(imagePathWithoutExt);
-                    await fs.unlink(imagePathWithoutExt);
-                    console.log('删除图片文件成功(不带后缀):', imagePathWithoutExt);
-                } catch (error) {
-                    if (error.code === 'ENOENT') {
-                        console.log('图片文件不存在(不带后缀):', imagePathWithoutExt);
-                    } else {
-                        throw error;
-                    }
-                }
+                const imagePath = path.resolve(__dirname, '..', 'uploads', 'images', imageUrl);
+                await fs.promises.unlink(imagePath);
+                console.log('删除图片文件成功:', imagePath);
             } catch (error) {
                 console.error('删除图片文件失败:', error);
-                // 继续执行，即使删除文件失败
+            }
+        }
+
+        // 删除视频文件（如果有）
+        if (article.video && article.video.url) {
+            try {
+                const videoUrl = article.video.url.split('/').pop();
+                const videoPath = path.resolve(__dirname, '..', 'uploads', 'videos', videoUrl);
+                await fs.promises.unlink(videoPath);
+                console.log('删除视频文件成功:', videoPath);
+            } catch (error) {
+                console.error('删除视频文件失败:', error);
             }
         }
 

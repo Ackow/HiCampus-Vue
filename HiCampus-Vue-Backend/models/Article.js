@@ -16,6 +16,11 @@ const articleSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    video: {
+        url: String,
+        thumbnail: String,
+        duration: Number
+    },
     location: {
         name: {
             type: String,

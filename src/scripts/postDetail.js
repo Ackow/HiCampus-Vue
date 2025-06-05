@@ -26,7 +26,7 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
   const mentionedUsers = ref([])
   const adminMentions = ref([])
 
-  // 新增：返回艾特信息
+  // 返回艾特信息
   const mentionedUsersComputed = computed(() => {
     if (!props.postDetail) {
       console.log('postDetail 为空')
@@ -96,13 +96,17 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
   }
 
   const nextSlide = () => {
-    if (currentImageIndex.value < props.postDetail.images.length - 1) {
-      currentImageIndex.value++
+    const totalItems = props.postDetail.video ? props.postDetail.images.length + 1 : props.postDetail.images.length;
+    if (currentImageIndex.value < totalItems - 1) {
+      currentImageIndex.value++;
     }
   }
 
   const goToSlide = (index) => {
-    currentImageIndex.value = index
+    const totalItems = props.postDetail.video ? props.postDetail.images.length + 1 : props.postDetail.images.length;
+    if (index >= 0 && index < totalItems) {
+      currentImageIndex.value = index;
+    }
   }
 
   // 图片预览
@@ -350,10 +354,7 @@ export function usePostDetail(props, emit, onDeleteSuccess) {
   }, { immediate: true })
 
   watch(() => props.postDetail, (newVal) => {
-    console.log('postDetail 发生变化，完整数据:', JSON.stringify(newVal, null, 2))
     if (newVal) {
-      console.log('mentionedUsers 数据:', newVal.mentionedUsers)
-      console.log('adminMentions 数据:', newVal.adminMentions)
       initLikeAndCollectData()
       
       if (isLoggedIn()) {

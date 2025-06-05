@@ -70,13 +70,17 @@
                 <span class="input-icon">
                   <img src="/assets/images/学院.svg" alt="学院图标"  class="input-icon-img"/>
                 </span>
-                <input 
+                <select 
                   v-model="registerForm.college" 
-                  type="text" 
                   name="college" 
-                  placeholder="请输入学院" 
                   required 
-                />
+                  class="form-input"
+                >
+                  <option value="">请选择学院</option>
+                  <option v-for="college in collegeOptions" :key="college" :value="college">
+                    {{ college }}
+                  </option>
+                </select>
               </div>
               <div class="input-wrapper">
                 <span class="input-icon">
@@ -115,8 +119,8 @@
 
 <script setup>
 import { useAuth } from '../utils/useAuth.js';
-// 导入 computed 函数
 import { computed } from 'vue';
+import { collegeOptions } from '../data/colleges';
 
 // 从 useAuth 中解构出需要的方法和状态
 const { 
@@ -137,4 +141,23 @@ const isLogin = computed(() => !isRegister.value);
 
 <style scoped>
     @import '../styles/RegisterAndLogin.css';
+
+    /* 添加下拉框样式 */
+    select.form-input {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1em;
+      padding-right: 2.5rem;
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background-color: transparent;
+    }
+
+    select.form-input:focus {
+      outline: none;
+    }
 </style>

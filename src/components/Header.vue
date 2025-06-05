@@ -109,34 +109,71 @@ const emit = defineEmits(['init-profile'])
 const auth = useAuth();
 const router = useRouter();
 const isLoggedIn = ref(auth.checkLoginStatus());
-const userInfo = ref(auth.getUserInfo());
+const userInfo = ref(null);
+
+// 从云端获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    const response = await fetch('http://localhost:3000/api/user', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.user) {
+        const userData = {
+          ...data.user,
+          _id: data.user.id
+        };
+        userInfo.value = userData;
+        
+        // 强制更新头像显示
+        const avatarImg = document.querySelector('.user-avatar');
+        if (avatarImg) {
+          avatarImg.src = userData.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
+        }
+      }
+    } else {
+      const errorData = await response.json();
+      console.error('获取用户信息失败:', errorData);
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+};
 
 const handleUserInfoUpdate = (event) => {
-  // console.log('Header: 收到用户信息更新事件', event.detail)
   if (event.detail) {
-    // 立即更新用户信息
-    userInfo.value = event.detail
+    userInfo.value = event.detail;
     
     // 强制更新头像显示
-    const avatarImg = document.querySelector('.user-avatar')
+    const avatarImg = document.querySelector('.user-avatar');
     if (avatarImg) {
-      avatarImg.src = userInfo.value.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg'
+      avatarImg.src = userInfo.value.avatar || 'http://localhost:3000/uploads/avatars/default-avatar.jpg';
     }
   }
-}
+};
 
-onMounted(() => {
-  // 初始化时获取最新用户信息
-  userInfo.value = auth.getUserInfo()
+onMounted(async () => {
+  // 初始化时从云端获取最新用户信息
+  if (isLoggedIn.value) {
+    await fetchUserInfo();
+  }
   
   // 设置更新回调
   auth.setUpdateUICallback((status) => {
-    isLoggedIn.value = status
-    userInfo.value = auth.getUserInfo()
-  })
+    isLoggedIn.value = status;
+    if (status) {
+      fetchUserInfo();
+    } else {
+      userInfo.value = null;
+    }
+  });
   
   // 添加事件监听
-  window.addEventListener('userInfoUpdated', handleUserInfoUpdate)
+  window.addEventListener('userInfoUpdated', handleUserInfoUpdate);
 });
 
 onUnmounted(() => {

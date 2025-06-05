@@ -1,9 +1,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 export function usePublish() {
   const router = useRouter()
   const images = ref([])
+  const video = ref(null)
+  const videoThumbnail = ref(null)
+  const videoDuration = ref(0)
   const mentions = ref([]) // 存储被艾特的用户
   const topics = ref([]) // 存储话题
   const searchResults = ref([])
@@ -21,14 +25,38 @@ export function usePublish() {
   const locationSearchRef = ref(null)
   const selectedLocation = ref(null)
   const locationResults = ref([])
+  const currentUser = ref(null)
+
+  // 获取当前用户信息
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/user', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.user) {
+          currentUser.value = data.user
+        }
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
+  }
+
+  // 检查是否是管理员
+  const isAdmin = computed(() => {
+    return currentUser.value && ['moderator', 'admin', 'superadmin'].includes(currentUser.value.role)
+  })
 
   // 默认话题选项
   const defaultTopics = [
     '#校园生活',
     '#学习交流',
     '#社团活动',
-    // '#美食',
-    // '#校园风景',
     '#吐槽区',
     '#游戏交流',
     '#二手闲置',
@@ -148,40 +176,73 @@ export function usePublish() {
     }
   }
 
-  // 处理图片选择
-  const handleImageSelect = (event) => {
+  // 处理媒体选择（图片或视频）
+  const handleMediaSelect = (event) => {
     const files = event.target.files
     if (!files) return
 
-    // 检查是否超过9张图片
-    if (images.value.length + files.length > 9) {
-      alert('最多只能上传9张图片')
-      return
-    }
-
-    // 处理每个选择的文件
     Array.from(files).forEach(file => {
-      // 验证文件类型
-      if (!file.type.startsWith('image/')) {
-        alert('请选择图片文件')
-        return
-      }
+      if (file.type.startsWith('video/')) {
+        // 处理视频文件
+        if (video.value) {
+          alert('只能上传一个视频')
+          return
+        }
 
-      // 验证文件大小（5MB限制）
-      if (file.size > 5 * 1024 * 1024) {
-        alert('图片大小不能超过5MB')
-        return
-      }
+        // 验证文件大小（20MB限制）
+        if (file.size > 20 * 1024 * 1024) {
+          alert('视频大小不能超过20MB')
+          return
+        }
 
-      // 创建预览
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        images.value.push({
+        // 创建视频预览
+        const videoUrl = URL.createObjectURL(file)
+        const videoElement = document.createElement('video')
+        videoElement.src = videoUrl
+
+        videoElement.onloadedmetadata = () => {
+          videoDuration.value = videoElement.duration
+        }
+
+        // 生成视频缩略图
+        videoElement.onseeked = () => {
+          const canvas = document.createElement('canvas')
+          canvas.width = videoElement.videoWidth
+          canvas.height = videoElement.videoHeight
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+          videoThumbnail.value = canvas.toDataURL('image/jpeg')
+        }
+
+        videoElement.currentTime = 1 // 设置到1秒处生成缩略图
+
+        video.value = {
           file: file,
-          preview: e.target.result
-        })
+          preview: videoUrl
+        }
+      } else if (file.type.startsWith('image/')) {
+        // 处理图片文件
+        if (images.value.length >= 9) {
+          alert('最多只能上传9张图片')
+          return
+        }
+
+        // 验证文件大小（5MB限制）
+        if (file.size > 5 * 1024 * 1024) {
+          alert('图片大小不能超过5MB')
+          return
+        }
+
+        // 创建预览
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          images.value.push({
+            file: file,
+            preview: e.target.result
+          })
+        }
+        reader.readAsDataURL(file)
       }
-      reader.readAsDataURL(file)
     })
 
     // 清空input，允许重复选择同一文件
@@ -193,28 +254,52 @@ export function usePublish() {
     images.value.splice(index, 1)
   }
 
-  // 上传图片到服务器
+  // 上传图片
   const uploadImage = async (file) => {
-    const formData = new FormData()
-    formData.append('image', file)
-
     try {
-      const response = await fetch('http://localhost:3000/api/user/upload/image', {
-        method: 'POST',
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await axios.post('http://localhost:3000/api/user/upload/image', formData, {
         headers: {
+          'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
+        }
       })
 
-      if (!response.ok) {
-        throw new Error('图片上传失败')
-      }
-
-      const data = await response.json()
-      return data.imageUrl
+      return response.data.url
     } catch (error) {
       console.error('图片上传错误:', error)
+      throw error
+    }
+  }
+
+  // 删除视频
+  const removeVideo = () => {
+    if (video.value && video.value.preview) {
+      URL.revokeObjectURL(video.value.preview)
+    }
+    video.value = null
+    videoThumbnail.value = null
+    videoDuration.value = 0
+  }
+
+  // 上传视频
+  const uploadVideo = async (file) => {
+    try {
+      const formData = new FormData()
+      formData.append('video', file)
+
+      const response = await axios.post('http://localhost:3000/api/user/upload/video', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+
+      return response.data.url
+    } catch (error) {
+      console.error('视频上传错误:', error)
       throw error
     }
   }
@@ -410,75 +495,66 @@ export function usePublish() {
 
   // 发布文章
   const handlePublish = async (publishData) => {
-    // 表单验证
-    if (!title.value.trim()) {
-      alert('请输入文章标题')
-      return
-    }
-
-    if (!content.value.trim()) {
-      alert('请输入文章内容')
-      return
-    }
-
-    // 从localStorage获取用户信息和token
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'))
-    const token = localStorage.getItem('token')
-    
-    if (!userInfo || !userInfo.id || !token) {
-      alert('请先登录')
-      return
-    }
-
     try {
       isPublishing.value = true
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('请先登录')
+      }
 
-      // 1. 先上传所有图片
-      const uploadedImages = []
-      for (const image of images.value) {
-        try {
-          const imageUrl = await uploadImage(image.file)
-          uploadedImages.push({ imageUrl })
-        } catch (error) {
-          console.error('图片上传失败:', error)
-          throw new Error('图片上传失败，请重试')
+      // 上传视频（如果有）
+      let videoData = null
+      if (video.value) {
+        const videoResult = await uploadVideo(video.value.file)
+        videoData = {
+          url: videoResult,
+          thumbnail: videoThumbnail.value,
+          duration: videoDuration.value
         }
       }
 
-      // 2. 创建文章数据
+      // 上传图片
+      const imagePromises = publishData.images.map(image => uploadImage(image.file))
+      const imageUrls = await Promise.all(imagePromises)
+
+      // 创建文章数据
       const articleData = {
-        title: title.value,
-        content: content.value,
-        images: uploadedImages,
-        location: selectedLocation.value,
-        topics: topics.value,
-        mentions: mentions.value.map(m => m.id),
-        adminMentions: publishData.adminMentions || [] // 从publishData中获取adminMentions
+        title: publishData.title,
+        content: publishData.content,
+        images: imageUrls.map(url => ({ imageUrl: url })),
+        mentions: publishData.mentions,
+        topics: publishData.topics,
+        location: publishData.location,
+        adminMentions: publishData.adminMentions,
+        video: videoData
       }
 
-      console.log('usePublish.js - handlePublish - 准备创建文章的数据:', articleData)
-
-      // 3. 发布文章
-      const result = await createArticle(articleData)
-      console.log('usePublish.js - handlePublish - 文章创建结果:', result)
+      // 发送创建文章请求
+      const response = await axios.post('http://localhost:3000/api/articles', articleData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
 
       return {
         success: true,
-        data: result.data
+        data: response.data
       }
     } catch (error) {
-      console.error('发布错误:', error)
+      console.error('发布失败:', error)
       return {
         success: false,
-        message: error.message || '发布失败'
+        message: error.response?.data?.message || error.message
       }
     } finally {
       isPublishing.value = false
     }
   }
 
-  onMounted(() => {
+  // 在组件挂载时获取用户信息
+  onMounted(async () => {
     document.addEventListener('click', handleClickOutside)
+    await fetchCurrentUser()
   })
 
   onUnmounted(() => {
@@ -489,6 +565,9 @@ export function usePublish() {
     title,
     content,
     images,
+    video,
+    videoThumbnail,
+    videoDuration,
     mentions,
     topics,
     searchResults,
@@ -505,8 +584,10 @@ export function usePublish() {
     locationSearchRef,
     selectedLocation,
     locationResults,
+    isAdmin,
+    currentUser,
     triggerImageInput,
-    handleImageSelect,
+    handleMediaSelect,
     removeImage,
     addMention,
     removeMention,
@@ -520,6 +601,7 @@ export function usePublish() {
     addCustomTopic,
     handleClickOutside,
     handlePublish,
-    removeLocation
+    removeLocation,
+    removeVideo
   }
 } 

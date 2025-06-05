@@ -20,22 +20,38 @@
                   <img src="/assets/images/翻页1.svg" alt="left" class="image-nav-btn-icon">
                 </button>
                 <div class="image-slider">
+                  <div v-if="postDetail.video && postDetail.video.url" class="video-preview" @click="openVideoPreview">
+                    <video 
+                      :src="`http://localhost:3000${postDetail.video.url}`"
+                      class="detail-video"
+                      :class="{ active: currentImageIndex === 0 }"
+                      preload="metadata"
+                      muted
+                      playsinline
+                    >
+                      <source :src="`http://localhost:3000${postDetail.video.url}`" type="video/mp4">
+                    </video>
+                    <div class="video-overlay">
+                      <img src="/assets/images/播放.svg" alt="播放" class="play-icon">
+                      <span class="video-duration">{{ formatDuration(postDetail.video.duration) }}</span>
+                    </div>
+                  </div>
                   <img 
                     v-for="(image, index) in postDetail.images" 
                     :key="index"
                     :src="image" 
                     :alt="'Post Image ' + (index + 1)" 
                     class="detail-image"
-                    :class="{ active: currentImageIndex === index }"
-                    @click="openImagePreview(index)"
+                    :class="{ active: currentImageIndex === (postDetail.video ? index + 1 : index) }"
+                    @click="openImagePreview(postDetail.video ? index + 1 : index)"
                   >
                 </div>
-                <button class="image-nav-btn next-btn" v-if="currentImageIndex < postDetail.images.length - 1" @click="nextSlide">
+                <button class="image-nav-btn next-btn" v-if="currentImageIndex < (postDetail.video ? postDetail.images.length : postDetail.images.length - 1)" @click="nextSlide">
                   <img src="/assets/images/翻页2.svg" alt="right" class="image-nav-btn-icon">
                 </button>
                 <div class="image-indicators">
                   <div 
-                    v-for="(_, index) in postDetail.images" 
+                    v-for="(_, index) in (postDetail.video ? [null, ...postDetail.images] : postDetail.images)" 
                     :key="index"
                     class="indicator"
                     :class="{ active: currentImageIndex === index }"
@@ -162,6 +178,27 @@
       </Transition>
     </Teleport>
 
+    <Teleport to="body">
+      <Transition name="fade">
+        <div class="video-preview-overlay" v-if="showVideoPreview" @click.self="closeVideoPreview">
+          <div class="video-preview-container">
+            <button class="close-btn" @click="closeVideoPreview">×</button>
+            <video 
+              v-if="postDetail.video && postDetail.video.url"
+              :src="`http://localhost:3000${postDetail.video.url}`"
+              :poster="postDetail.video.thumbnail ? `http://localhost:3000${postDetail.video.thumbnail}` : '/assets/images/video-placeholder.jpg'"
+              controls
+              autoplay
+              class="preview-video"
+            >
+              <source :src="`http://localhost:3000${postDetail.video.url}`" type="video/mp4">
+              您的浏览器不支持视频播放。
+            </video>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <ImagePreview
       :show="showImagePreview"
       :images="postDetail.images"
@@ -177,6 +214,7 @@ import ImagePreview from '../components/ImagePreview.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref } from 'vue'
 
 const router = useRouter();
 const baseUrl = 'http://localhost:3000';
@@ -364,6 +402,24 @@ const confirmDeleteComment = (comment) => {
       // 用户取消删除
     });
 };
+
+// 添加视频预览相关的状态
+const showVideoPreview = ref(false)
+
+const openVideoPreview = () => {
+  showVideoPreview.value = true
+}
+
+const closeVideoPreview = () => {
+  showVideoPreview.value = false
+}
+
+// 格式化视频时长
+const formatDuration = (seconds) => {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
 </script>
 
 <style scoped>
@@ -389,5 +445,91 @@ const confirmDeleteComment = (comment) => {
 .admin-mention {
   color: #ff4d4f;
   margin: 0 4px;
+}
+
+.video-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background-color: #000;
+}
+
+.detail-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background-color: #000;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.play-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 8px;
+}
+
+.video-duration {
+  color: white;
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.video-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1005;
+}
+
+.video-preview-container {
+  position: relative;
+  width: 80%;
+  max-width: 1200px;
+  max-height: 80vh;
+}
+
+.preview-video {
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.close-btn {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.close-btn:hover {
+  opacity: 0.8;
 }
 </style> 

@@ -5,11 +5,11 @@
         <a href="#profile" class="back-btn">返回</a>
       </div>
       
-      <div class="edit-profile-content">
+      <div class="edit-profile-content" v-loading="isLoading">
         <div class="avatar-section">
           <div class="avatar-container">
             <img :src="avatarUrl" class="profile-edit-avatar" alt="头像">
-            <button class="edit-avatar-btn" @click="handleAvatarClick">
+            <button class="edit-avatar-btn" @click="handleAvatarClick" :disabled="isLoading">
               <img src="/assets/images/编辑.svg" alt="编辑" class="edit-icon">
             </button>
             <input
@@ -32,6 +32,7 @@
               v-model="formData.nickname"
               placeholder="请输入昵称" 
               maxlength="6"
+              :disabled="isLoading"
             >
           </div>
 
@@ -43,17 +44,22 @@
               v-model="formData.studentId"
               placeholder="请输入学号（选填）" 
               maxlength="8"
+              :disabled="isLoading"
             >
           </div>
 
           <div class="form-group">
             <label>学院</label>
-            <input 
-              type="text" 
+            <select 
               class="form-input college" 
               v-model="formData.college"
-              placeholder="请输入学院" 
+              :disabled="isLoading"
             >
+              <option value="">请选择学院</option>
+              <option v-for="college in collegeOptions" :key="college" :value="college">
+                {{ college }}
+              </option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -64,6 +70,7 @@
               v-model="formData.age"
               placeholder="请输入年龄" 
               maxlength="2"
+              :disabled="isLoading"
             >
           </div>
 
@@ -76,6 +83,7 @@
                   name="gender" 
                   value="male"
                   v-model="formData.gender"
+                  :disabled="isLoading"
                 >
                 <span>男</span>
               </label>
@@ -85,6 +93,7 @@
                   name="gender" 
                   value="female"
                   v-model="formData.gender"
+                  :disabled="isLoading"
                 >
                 <span>女</span>
               </label>
@@ -98,6 +107,7 @@
               class="form-input" 
               v-model="formData.newPassword"
               placeholder="请输入新密码"
+              :disabled="isLoading"
             >
           </div>
 
@@ -108,12 +118,13 @@
               class="form-input" 
               v-model="formData.confirmPassword"
               placeholder="请再次输入新密码"
+              :disabled="isLoading"
             >
           </div>
 
           <div class="form-actions">
-            <button class="cancel-btn" @click="handleCancel">取消</button>
-            <button class="save-btn" @click="handleSave">保存</button>
+            <button class="cancel-btn" @click="handleCancel" :disabled="isLoading">取消</button>
+            <button class="save-btn" @click="handleSave" :disabled="isLoading">保存</button>
           </div>
         </div>
       </div>
@@ -127,6 +138,8 @@ const {
   avatarUrl,
   avatarInput,
   formData,
+  isLoading,
+  collegeOptions,
   handleAvatarClick,
   handleAvatarChange,
   handleCancel,
@@ -136,4 +149,19 @@ const {
 
 <style scoped>
 @import '../styles/edit-profile.css';
+
+/* 添加下拉框样式 */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+  padding-right: 2.5rem;
+}
+
+select.form-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
 </style> 
