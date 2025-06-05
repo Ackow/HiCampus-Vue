@@ -43,8 +43,15 @@
             <p v-if="notification.content" class="comment-content">{{ notification.content }}</p>
             <span class="time-ago">{{ notification.time }}</span>
           </div>
-          <div class="notification-right" v-if="notification.postImage">
-            <img :src="getImageUrl(notification.postImage)" alt="文章缩略图" class="post-thumbnail">
+          <div class="notification-right" v-if="notification.postImage || notification.video">
+            <img 
+              :src="notification.video?.thumbnail || getImageUrl(notification.postImage)" 
+              alt="文章缩略图" 
+              class="post-thumbnail"
+            >
+            <div v-if="notification.video" class="video-indicator">
+              <img src="/assets/images/视频.svg" alt="视频" class="video-icon">
+            </div>
           </div>
         </div>
       </div>
@@ -165,22 +172,16 @@ export default {
     // 获取图片URL
     const getImageUrl = (image) => {
       if (!image) return '/default-image.jpg';
+      
       // 如果图片URL已经包含完整路径，直接返回
       if (image.startsWith('http')) {
         return image;
       }
-      // 如果图片URL包含后缀，直接拼接
-      if (image.includes('.')) {
-        return `${baseUrl}/uploads/images/${image}`;
-      }
-      // 如果图片URL不包含后缀，尝试添加常见图片后缀
-      const extensions = ['.jpg', '.jpeg', '.png', '.gif'];
-      for (const ext of extensions) {
-        const url = `${baseUrl}/uploads/images/${image}${ext}`;
-        // 这里可以添加图片存在性检查
-        return url;
-      }
-      return '/default-image.jpg';
+      
+      // 处理相对路径
+      const imagePath = image.startsWith('/') ? image : `/${image}`;
+      const fullUrl = `${baseUrl}/uploads/images${imagePath}`;
+      return fullUrl;
     };
 
     // 标记消息为已读
@@ -252,13 +253,36 @@ export default {
 
         // 设置选中的文章
         const article = response.data;
+        
+        // 处理视频数据
+        let videoData = null;
+        if (article.video) {
+          videoData = {
+            url: article.video.url || `${baseUrl}/uploads/videos/${article.video.filename}`,
+            thumbnail: article.video.thumbnail 
+              ? (article.video.thumbnail.startsWith('http') 
+                ? article.video.thumbnail 
+                : `${baseUrl}/uploads/thumbnails/${article.video.thumbnail}`)
+              : null,
+            duration: article.video.duration,
+            width: article.video.width,
+            height: article.video.height
+          };
+        }
+
         selectedPost.value = {
           id: article._id,
           username: article.creator.nickname,
           avatar: getAvatarUrl(article.creator.avatar),
           title: article.title,
           description: article.content,
-          images: article.images ? article.images.map(img => `${baseUrl}/uploads/images/${img}`) : [],
+          images: article.images ? article.images.map(img => {
+            if (typeof img === 'string') {
+              return img.startsWith('http') ? img : `${baseUrl}/uploads/images/${img}`;
+            }
+            return img.url || `${baseUrl}/uploads/images/${img.filename}`;
+          }) : [],
+          video: videoData,
           likeCount: article.likeCount || 0,
           collectCount: article.collectCount || 0,
           commentCount: article.commentCount || 0,
@@ -267,10 +291,14 @@ export default {
           topics: article.topics || [],
           creatorId: article.creator._id,
           comments: article.comments || [],
-          location: article.location || null
+          location: article.location || null,
+          createdAt: article.createdAt
         };
+
+        console.log('处理后的文章数据:', selectedPost.value); // 添加日志
       } catch (error) {
         console.error('获取文章详情失败:', error);
+        ElMessage.error('获取文章详情失败');
       }
     };
 
@@ -413,5 +441,28 @@ export default {
 .delete-all-btn:disabled {
   background-color: #fab6b6;
   cursor: not-allowed;
+}
+
+.video-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-icon {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1);
+}
+
+.notification-right {
+  position: relative;
 }
 </style> 
