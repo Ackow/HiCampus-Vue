@@ -332,12 +332,22 @@ const getArticleComments = async (req, res) => {
             });
         }
 
-        const comments = await Comment.find({ article: articleId })
-            .sort({ createdAt: -1 })
-            .populate('commenter', 'nickname avatar');
+        // 获取主评论（非回复）
+        const comments = await Comment.find({ 
+            article: articleId,
+            parentComment: null 
+        })
+        .sort({ createdAt: -1 })
+        .populate('commenter', 'nickname avatar')
+        .populate({
+            path: 'replies',
+            populate: [
+                { path: 'commenter', select: 'nickname avatar' },
+                { path: 'replyTo', select: 'nickname avatar' }
+            ]
+        });
         
         console.log('找到评论数量:', comments.length);
-        // console.log('评论数据:', comments);
 
         res.json(comments);
     } catch (error) {
@@ -353,7 +363,7 @@ const getArticleComments = async (req, res) => {
 const addComment = async (req, res) => {
     try {
         const { articleId } = req.params;
-        const { content } = req.body;
+        const { content, parentCommentId, replyToId } = req.body;
 
         if (!content) {
             return res.status(400).json({ 
@@ -366,11 +376,20 @@ const addComment = async (req, res) => {
         const comment = new Comment({
             article: articleId,
             commenter: req.user.userId,
-            content
+            content,
+            parentComment: parentCommentId || null,
+            replyTo: replyToId || null
         });
 
         // 保存评论
         const savedComment = await comment.save();
+
+        // 如果是回复，更新父评论的replies数组
+        if (parentCommentId) {
+            await Comment.findByIdAndUpdate(parentCommentId, {
+                $push: { replies: savedComment._id }
+            });
+        }
 
         // 更新文章的评论数
         await Article.findByIdAndUpdate(articleId, {
@@ -380,11 +399,21 @@ const addComment = async (req, res) => {
         // 获取文章信息
         const article = await Article.findById(articleId);
         
-        // 创建消息记录（如果评论者不是文章作者）
-        if (req.user.userId.toString() !== article.creator.toString()) {
+        // 创建消息记录
+        let messageReceiver;
+        if (parentCommentId) {
+            // 如果是回复，通知被回复的用户
+            messageReceiver = replyToId;
+        } else {
+            // 如果是新评论，通知文章作者
+            messageReceiver = article.creator;
+        }
+
+        // 如果评论者不是接收者，创建消息
+        if (req.user.userId.toString() !== messageReceiver.toString()) {
             const message = new Message({
                 sender: req.user.userId,
-                receiver: article.creator,
+                receiver: messageReceiver,
                 type: 'comment',
                 article: articleId,
                 content: content
@@ -394,7 +423,8 @@ const addComment = async (req, res) => {
 
         // 返回带有评论者信息的评论
         const populatedComment = await Comment.findById(savedComment._id)
-            .populate('commenter', 'nickname avatar');
+            .populate('commenter', 'nickname avatar')
+            .populate('replyTo', 'nickname avatar');
 
         res.status(201).json(populatedComment);
     } catch (error) {
@@ -431,6 +461,16 @@ const deleteComment = async (req, res) => {
         // 验证权限（评论作者、管理员或超级管理员可以删除）
         if (comment.commenter.toString() !== userId && !['admin', 'superadmin'].includes(user.role)) {
             return res.status(403).json({ message: '没有权限删除此评论' });
+        }
+
+        // 如果是主评论，删除所有回复
+        if (!comment.parentComment) {
+            await Comment.deleteMany({ parentComment: commentId });
+        } else {
+            // 如果是回复，从父评论的replies数组中移除
+            await Comment.findByIdAndUpdate(comment.parentComment, {
+                $pull: { replies: commentId }
+            });
         }
 
         // 删除评论

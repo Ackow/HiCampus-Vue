@@ -48,6 +48,7 @@
               :src="notification.video?.thumbnail || getImageUrl(notification.postImage)" 
               alt="文章缩略图" 
               class="post-thumbnail"
+              @error="handleImageError"
             >
             <div v-if="notification.video" class="video-indicator">
               <img src="/assets/images/视频.svg" alt="视频" class="video-icon">
@@ -178,10 +179,8 @@ export default {
         return image;
       }
       
-      // 处理相对路径
-      const imagePath = image.startsWith('/') ? image : `/${image}`;
-      const fullUrl = `${baseUrl}/uploads/images${imagePath}`;
-      return fullUrl;
+      // 如果是相对路径，添加基础URL
+      return `${baseUrl}${image}`;
     };
 
     // 标记消息为已读
@@ -384,6 +383,10 @@ export default {
       }
     };
 
+    const handleImageError = (e) => {
+      e.target.src = '/default-image.jpg';
+    };
+
     onMounted(() => {
       fetchMessages();
     });
@@ -409,7 +412,8 @@ export default {
       handleLikeToggle,
       handleCommentAdded,
       handleLikeCountUpdate,
-      handleCollectCountUpdate
+      handleCollectCountUpdate,
+      handleImageError
     };
   }
 };
@@ -464,5 +468,12 @@ export default {
 
 .notification-right {
   position: relative;
+}
+
+.post-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
 }
 </style> 

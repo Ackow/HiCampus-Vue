@@ -120,14 +120,64 @@
                           <span class="comment-time">{{ new Date(comment.createdAt).toLocaleString() }}</span>
                         </div>
                         <p class="comment-text">{{ comment.content }}</p>
+                        <div class="comment-actions">
+                          <button class="reply-btn" @click="handleReply(comment)">
+                            <img src="/assets/images/评论.svg" alt="回复" class="reply-icon">
+                            回复
+                          </button>
+                          <button 
+                            v-if="isCommentAuthor(comment) || isAdmin" 
+                            class="delete-comment-btn"
+                            @click="confirmDeleteComment(comment)"
+                          >
+                            <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
+                          </button>
+                        </div>
+                        
+                        <!-- 回复列表 -->
+                        <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
+                          <div v-for="reply in comment.replies" :key="reply._id" class="reply-item">
+                            <img 
+                              :src="getCommentDisplayInfo(reply).avatar" 
+                              alt="Reply Avatar" 
+                              class="reply-avatar"
+                              @error="handleAvatarError"
+                              @click="handleUserInfoClick($event, true, reply)"
+                              :style="{ cursor: postDetail.topics?.includes('#吐槽区') ? 'default' : 'pointer' }"
+                            >
+                            <div class="reply-content">
+                              <div class="reply-header">
+                                <span class="reply-username">{{ getCommentDisplayInfo(reply).nickname }}</span>
+                                <span v-if="reply.replyTo" class="reply-to">
+                                  回复
+                                  <span 
+                                    class="reply-to-username"
+                                    @click="handleUserInfoClick($event, true, null, reply.replyTo._id)"
+                                    :style="{ cursor: postDetail.topics?.includes('#吐槽区') ? 'default' : 'pointer' }"
+                                  >
+                                    @{{ reply.replyTo.nickname }}
+                                  </span>
+                                </span>
+                                <span class="reply-time">{{ new Date(reply.createdAt).toLocaleString() }}</span>
+                                <button 
+                                  v-if="isCommentAuthor(reply) || isAdmin" 
+                                  class="delete-comment-btn"
+                                  @click="confirmDeleteComment(reply)"
+                                >
+                                  <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
+                                </button>
+                              </div>
+                              <p class="reply-text">{{ reply.content }}</p>
+                              <div class="reply-actions">
+                                <button class="reply-btn" @click="handleReply(comment, reply)">
+                                  <img src="/assets/images/评论.svg" alt="回复" class="reply-icon">
+                                  回复
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <button 
-                        v-if="isCommentAuthor(comment) || isAdmin" 
-                        class="delete-comment-btn"
-                        @click="confirmDeleteComment(comment)"
-                      >
-                        <img src="/assets/images/删除文章.svg" alt="删除" class="btn-icon">
-                      </button>
                     </div>
                   </div>
                   <span class="no-comment" v-else>暂无评论</span>
@@ -140,7 +190,7 @@
                 <input 
                   type="text" 
                   v-model="commentContent" 
-                  placeholder="说点什么..." 
+                  :placeholder="replyTo ? `回复 @${replyTo.nickname}` : '说点什么...'" 
                   @keyup.enter="submitComment"
                   ref="commentInput"
                 >
@@ -151,6 +201,13 @@
                   :disabled="isLoading"
                 >
                   {{ isLoading ? '发送中...' : '发送' }}
+                </button>
+                <button 
+                  v-if="replyTo" 
+                  class="cancel-reply-btn" 
+                  @click="cancelReply"
+                >
+                  取消回复
                 </button>
               </div>
               <div class="action-buttons">
@@ -213,7 +270,7 @@ import ImagePreview from '../components/ImagePreview.vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useAuth } from '../utils/useAuth'
 
 const router = useRouter();
@@ -237,7 +294,7 @@ const emit = defineEmits([
   'comment-added',
   'update-like-count',
   'updateCollectCount',
-  'article-deleted'
+  'updateCommentCount'
 ])
 
 // 添加随机昵称生成函数
@@ -283,6 +340,7 @@ const getCommentDisplayInfo = (comment) => {
   };
 };
 
+// 从 usePostDetail 中解构需要的函数和变量
 const {
   currentImageIndex,
   commentContent,
@@ -305,7 +363,6 @@ const {
   closeImagePreview,
   toggleLike,
   toggleCollect,
-  submitComment,
   handleDelete,
   showDeleteCommentConfirmDialog,
   handleDeleteComment,
@@ -314,6 +371,79 @@ const {
   isCollected,
   collectCount
 } = usePostDetail(props, emit)
+
+// 添加回复相关的状态
+const replyTo = ref(null);
+const parentComment = ref(null);
+const commentInput = ref(null);
+
+// 处理回复
+const handleReply = (comment, reply = null) => {
+  parentComment.value = comment;
+  replyTo.value = reply ? reply.commenter : comment.commenter;
+  // 聚焦到输入框
+  nextTick(() => {
+    if (commentInput.value) {
+      commentInput.value.focus();
+    }
+  });
+};
+
+// 取消回复
+const cancelReply = () => {
+  replyTo.value = null;
+  parentComment.value = null;
+  commentContent.value = '';
+};
+
+// 提交评论
+const submitComment = async () => {
+  if (!commentContent.value.trim()) return;
+  
+  try {
+    isLoading.value = true;
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      `${baseUrl}/api/articles/${props.postDetail.id}/comments`,
+      {
+        content: commentContent.value,
+        parentCommentId: parentComment.value?._id,
+        replyToId: replyTo.value?._id
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    if (parentComment.value) {
+      // 如果是回复，更新父评论的回复列表
+      const parentCommentIndex = comments.value.findIndex(c => c._id === parentComment.value._id);
+      if (parentCommentIndex !== -1) {
+        if (!comments.value[parentCommentIndex].replies) {
+          comments.value[parentCommentIndex].replies = [];
+        }
+        comments.value[parentCommentIndex].replies.push(response.data);
+      }
+    } else {
+      // 如果是新评论，添加到评论列表
+      comments.value.unshift(response.data);
+    }
+
+    // 清空输入框和回复状态
+    commentContent.value = '';
+    cancelReply();
+    
+    // 触发评论添加事件
+    emit('comment-added');
+  } catch (error) {
+    console.error('提交评论失败:', error);
+    ElMessage.error('评论发送失败，请重试');
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 // 在 script setup 部分添加权限判断逻辑
 const isAuthor = computed(async () => {
@@ -476,6 +606,13 @@ const confirmDelete = async () => {
 // 修改删除评论确认函数
 const confirmDeleteComment = async (comment) => {
   try {
+    const uid = localStorage.getItem('uid');
+    if (!uid) {
+      ElMessage.error('请先登录');
+      return;
+    }
+
+    // 获取当前用户信息
     const response = await fetch(`${baseUrl}/api/user`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -488,30 +625,52 @@ const confirmDeleteComment = async (comment) => {
     
     const data = await response.json();
     const currentUser = data.user;
-    
-    if (currentUser.id !== comment.commenter._id && currentUser.role !== 'admin') {
-      ElMessage.warning('您没有权限删除此评论');
+
+    console.log('当前用户信息:', currentUser);
+    if (uid !== comment.commenter._id && currentUser.role !== 'admin' && currentUser.role !== 'superadmin' ) {
+      ElMessage.error('您没有权限删除此评论');
       return;
     }
 
-    ElMessageBox.confirm(
-      '删除后将无法恢复，是否确认删除该评论？',
-      '确认删除',
+    const confirmed = await ElMessageBox.confirm(
+      '确定要删除这条评论吗？此操作不可恢复',
+      '提示',
       {
-        confirmButtonText: '确认删除',
+        confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'warning'
       }
-    )
-      .then(() => {
-        handleDeleteComment(comment);
-      })
-      .catch(() => {
-        // 用户取消删除
+    );
+
+    if (confirmed) {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${baseUrl}/api/articles/${props.postDetail.id}/comments/${comment._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
+
+      // 更新评论列表
+      if (comment.parentComment) {
+        // 如果是回复，从父评论的replies中移除
+        const parentComment = comments.value.find(c => c._id === comment.parentComment);
+        if (parentComment) {
+          parentComment.replies = parentComment.replies.filter(r => r._id !== comment._id);
+        }
+      } else {
+        // 如果是主评论，从评论列表中移除
+        comments.value = comments.value.filter(c => c._id !== comment._id);
+      }
+
+      // 更新评论数
+      props.postDetail.commentCount--;
+      emit('updateCommentCount', props.postDetail.commentCount);
+
+      ElMessage.success('评论已删除');
+    }
   } catch (error) {
-    console.error('获取用户信息失败:', error);
-    ElMessage.error('获取用户信息失败');
+    console.error('删除评论失败:', error);
+    ElMessage.error('删除评论失败，请重试');
   }
 };
 
@@ -643,5 +802,164 @@ const formatDuration = (seconds) => {
 
 .close-btn:hover {
   opacity: 0.8;
+}
+
+.replies-list {
+  margin-top: 12px;
+}
+
+.reply-item {
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.reply-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+.reply-content {
+  flex: 1;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 8px;
+  position: relative;
+}
+
+.reply-header .delete-comment-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+  margin-left: auto;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.reply-header .delete-comment-btn:hover {
+  opacity: 1;
+}
+
+.reply-header .btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.reply-username {
+  font-weight: 500;
+  color: #333;
+  margin-right: 8px;
+}
+
+.reply-to {
+  color: #666;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.reply-to-username {
+  color: #1890ff;
+  cursor: pointer;
+}
+
+.reply-to-username:hover {
+  text-decoration: underline;
+}
+
+.reply-time {
+  color: #999;
+  font-size: 12px;
+}
+
+.reply-text {
+  color: #333;
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reply-btn {
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reply-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+}
+
+.reply-btn:hover {
+  color: #d6d6d6;
+}
+
+.reply-btn:hover .reply-icon {
+  opacity: 1;
+}
+
+.cancel-reply-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0 8px;
+  font-size: 14px;
+}
+
+.cancel-reply-btn:hover {
+  color: #333;
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.delete-comment-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+  margin-left: auto;
+}
+
+.delete-comment-btn:hover {
+  opacity: 1;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
 }
 </style> 
